@@ -13,6 +13,33 @@
 /* baud rate register value calculation */
 #define	CPU_FREQ	16000000
 
+#define WDTCSR	    WDTCR
+#define WDCE        WDTOE
+
+#define WATCHDOG_OFF    (0)
+#define WATCHDOG_16MS   (_BV(WDE))
+#define WATCHDOG_32MS   (_BV(WDP0) | _BV(WDE))
+#define WATCHDOG_64MS   (_BV(WDP1) | _BV(WDE))
+#define WATCHDOG_125MS  (_BV(WDP1) | _BV(WDP0) | _BV(WDE))
+#define WATCHDOG_250MS  (_BV(WDP2) | _BV(WDE))
+#define WATCHDOG_500MS  (_BV(WDP2) | _BV(WDP0) | _BV(WDE))
+#define WATCHDOG_1S     (_BV(WDP2) | _BV(WDP1) | _BV(WDE))
+#define WATCHDOG_2S     (_BV(WDP2) | _BV(WDP1) | _BV(WDP0) | _BV(WDE))
+
+// Watchdog functions. These are only safe with interrupts turned off.
+static inline void watchdogReset(void)
+{
+  __asm__ __volatile__ (
+    "wdr\n"
+  );
+}
+
+static inline void watchdogConfig(uint8_t x)
+{
+  WDTCSR = _BV(WDCE) | _BV(WDE);
+  WDTCSR = x;
+}
+
 /* definitions for UART control */
 #define	BAUD_RATE_LOW_REG	UBRRL
 #define	BAUD_RATE_HIGH_REG	UBRRH

@@ -3,9 +3,6 @@
 int main(void)
 {
     uint8_t eebyte = eeprom_read_byte((uint8_t*)0);
-    const char* msg="Bonjour le monde!\r\n";
-    //BUZZPORT ^= _BV(BUZZ_NO);
-    //while(1) _delay_ms(500);
     BUZZ_DDR = _BV(BUZZ_NO); //Set buzzer pin as an output
 
     /* Initialization */    
@@ -15,8 +12,12 @@ int main(void)
     BUZZPORT ^= _BV(BUZZ_NO);
     _delay_ms(1000);
     BUZZPORT ^= _BV(BUZZ_NO);
+
+    struct cmd cmd;
+    watchdogConfig(WATCHDOG_1S);
+
     while(1) {
-      uart_blocking_send_bytes((uint8_t*)msg, strlen(msg));
-      _delay_ms(1000);
+      read_cmd(&cmd);
+      watchdogReset();
     }
 }
