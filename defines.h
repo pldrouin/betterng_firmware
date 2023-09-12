@@ -53,6 +53,7 @@ static inline void watchdogConfig(uint8_t x)
 #define	ENABLE_RECEIVE_INTR	RXCIE
 #define	ENABLE_SEND_INTR	UDRIE
 #define	UART_CONTROL_REG_C	UCSRC
+#define	REGISTER_SELECT		URSEL
 #define	ENABLE_EVEN_PARITY	UPM1
 #define	ENABLE_CHARACTER_SIZE_1	UCSZ1
 #define	ENABLE_CHARACTER_SIZE_0	UCSZ0
@@ -63,7 +64,7 @@ static inline void watchdogConfig(uint8_t x)
 #define UART_RX_INTR_FUNC	USART_RXC_vect
 #define UART_DRE_INTR_FUNC	USART_UDRE_vect
 
-#define UART_BUFFER_SIZE	64
+#define UART_BUFFER_SIZE	32
 
 #define BUZZ_DDR        DDRD
 #define BUZZPORT        PORTD
