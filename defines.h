@@ -44,6 +44,7 @@ static inline void watchdogConfig(uint8_t x)
 #define	BAUD_RATE_LOW_REG	UBRRL
 #define	BAUD_RATE_HIGH_REG	UBRRH
 #define	UART_CONTROL_REG_A	UCSRA
+#define ENABLE_DOUBLE_SPEED	U2X
 #define	FRAME_ERROR_BIT		FE
 #define	DATA_OVERRUN_BIT	DOR
 #define	PARITY_ERROR_BIT	PE

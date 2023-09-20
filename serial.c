@@ -41,7 +41,16 @@ void inituart(long baudrate)
 {
   readbuf.currbyte=readbuf.curwbyte=0;
   sendbuf.currbyte=sendbuf.curwbyte=0;
-  uint16_t prescale = ((CPU_FREQ / (baudrate * 16UL))) - 1;
+  uint16_t prescale;
+ 
+  if(baudrate<=19200) {
+    UART_CONTROL_REG_A &= ~_BV(ENABLE_DOUBLE_SPEED);
+    prescale = ((CPU_FREQ / (baudrate * 16UL))) - 1;
+
+  } else {
+    UART_CONTROL_REG_A |= _BV(ENABLE_DOUBLE_SPEED);
+    prescale = ((CPU_FREQ / (baudrate * 8UL))) - 1;
+  }
   BAUD_RATE_LOW_REG = prescale;
   BAUD_RATE_HIGH_REG = (prescale >> 8);
   UART_CONTROL_REG_B = _BV(ENABLE_RECEIVER_BIT) |
@@ -50,7 +59,8 @@ void inituart(long baudrate)
   // 8 databits
   // Even parity
   // 1 stopbit
-  UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_EVEN_PARITY) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
+  //UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_EVEN_PARITY) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
+  UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
 }
 
 // Called when data received from USART

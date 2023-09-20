@@ -198,7 +198,7 @@ $(DEP): %.d: %.c %.h
 	@echo "Generating dependency file $@"
 	@set -e; rm -f $@
 	@$(CC) $(ALL_CFLAGS) -M $(INCLUDEDIRS) $< > $@.tmp
-	@sed 's,\($*\)\.o[ :]*,\1.o \1.os $@ : ,g' < $@.tmp > $@
+	@sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.tmp > $@
 	@rm -f $@.tmp
 
 include $(DEP)

@@ -19,22 +19,22 @@ int read_cmd(struct cmd* cmd)
   if(nbytes==1) {
     uart_blocking_receive_byte(&cmd->byte1);
 
-    if(input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
+    if(check_one_byte(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
     return 1;
   }
 
   uart_blocking_receive_bytes(&cmd->byte1, 2);
 
-  if(input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
+  if(check_two_bytes(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
   return 2;
 }
 
 void ping_cmd(const struct cmd* cmd)
 {
-  if(check_one_byte(cmd)) send_cmd(cmd);
+  send_cmd(cmd);
 }
 
 void reset_cmd(const struct cmd* cmd)
 {
-  if(check_one_byte(cmd)) while(1);
+  while(1);
 }
