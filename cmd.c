@@ -36,5 +36,6 @@ void ping_cmd(const struct cmd* cmd)
 
 void reset_cmd(const struct cmd* cmd)
 {
+  send_cmd(cmd);
   while(1);
 }
