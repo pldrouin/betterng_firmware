@@ -1,7 +1,7 @@
 #include "serial.h"
 
 volatile struct uart_buffer readbuf;
-volatile struct uart_buffer sendbuf;
+volatile struct uart_buffer writebuf;
 
 static inline int write_byte_to_uart_buf(volatile struct uart_buffer* buf, const uint8_t byte)
 {
@@ -40,7 +40,7 @@ static inline uint8_t uart_buf_non_empty(volatile struct uart_buffer* buf)
 void inituart(long baudrate)
 {
   readbuf.currbyte=readbuf.curwbyte=0;
-  sendbuf.currbyte=sendbuf.curwbyte=0;
+  writebuf.currbyte=writebuf.curwbyte=0;
   uint16_t prescale;
  
   if(baudrate<=19200) {
@@ -84,7 +84,7 @@ ISR(UART_DRE_INTR_FUNC)
 {
   uint8_t byte;
 
-  if(read_byte_from_uart_buf(&sendbuf, &byte)) UART_CONTROL_REG_B &= ~_BV(ENABLE_SEND_INTR);
+  if(read_byte_from_uart_buf(&writebuf, &byte)) UART_CONTROL_REG_B &= ~_BV(ENABLE_SEND_INTR);
   
   else UART_DATA_REG = byte;
 }
@@ -92,7 +92,7 @@ ISR(UART_DRE_INTR_FUNC)
 //Sends to UART buffer (non-blocking)
 unsigned int uart_send_byte( const uint8_t byte)
 {
-  unsigned int ret=write_byte_to_uart_buf(&sendbuf, byte);
+  unsigned int ret=write_byte_to_uart_buf(&writebuf, byte);
   UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
   return ret;
 }
@@ -110,7 +110,7 @@ unsigned int uart_send_bytes( const uint8_t* buf, const unsigned int len )
 {
   unsigned int i=0;
 
-  while(i<len && !write_byte_to_uart_buf(&sendbuf, buf[i])) ++i;
+  while(i<len && !write_byte_to_uart_buf(&writebuf, buf[i])) ++i;
   UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
   return i;
 }
@@ -134,18 +134,18 @@ void uart_clear_receive(void)
 void uart_blocking_flush_send(void)
 {
   //Blocks while buffer is not empty
-  while(uart_buf_non_empty(&sendbuf));
+  while(uart_buf_non_empty(&writebuf));
 }
 
 //Sends to UART buffer
 void uart_blocking_send_byte( const uint8_t byte )
 {
   //Blocks if buffer is full
-  while(write_byte_to_uart_buf(&sendbuf, byte));
+  while(write_byte_to_uart_buf(&writebuf, byte));
   UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
 
   //Blocks while buffer is not empty
-  while(uart_buf_non_empty(&sendbuf));
+  while(uart_buf_non_empty(&writebuf));
 }
 
 //Receives from UART buffer
@@ -163,12 +163,12 @@ void uart_blocking_send_bytes( const uint8_t* buf, const unsigned int len )
 
   for(i=0; i<len; ++i) {
     //Blocks if buffer is full
-    while(write_byte_to_uart_buf(&sendbuf, buf[i]));
+    while(write_byte_to_uart_buf(&writebuf, buf[i]));
     UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
   }
 
   //Blocks while buffer is not empty
-  while(uart_buf_non_empty(&sendbuf));
+  while(uart_buf_non_empty(&writebuf));
 }
 
 //Receives from UART buffer

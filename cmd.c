@@ -14,7 +14,7 @@ static void (*input_cmd_array[255])(const struct cmd*)={
 int read_cmd(struct cmd* cmd)
 {
   if(uart_receive_byte(&cmd->id)) return 0;
-  const uint8_t nbytes=1+(cmd->id>=FIRST_TWO_BYTE_CMD_INDEX);
+  const uint8_t nbytes=CMD_NBYTES(cmd)-1;
 
   if(nbytes==1) {
     uart_blocking_receive_byte(&cmd->byte1);

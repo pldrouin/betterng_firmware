@@ -2,6 +2,8 @@
 #ifndef	PPINC
 #define	PPINC
 
+#include <avr/sfr_defs.h>
+
 #define	_ATMEGA16	// device select: _ATMEGAxxxx
 #ifdef	__ICCAVR__
 #include	"iom16.h"
@@ -68,7 +70,20 @@ static inline void watchdogConfig(uint8_t x)
 #define UART_BUFFER_SIZE	32
 
 #define BUZZ_DDR        DDRD
-#define BUZZPORT        PORTD
+#define BUZZ_PORT       PORTD
 #define BUZZ_NO         PD6
+
+#define OVERTEMP_PORT	PORTC
+#define OVERTEMP_NO	PC2
+
+#define MCU_LED_DDR        DDRD
+#define MCU_LED_PORT       PORTD
+#define MCU_LED_NO         PD7
+
+#define set_output(DDR, PIN) DDR |= _BV(PIN)
+#define set_input(DDR, PIN) DDR &= ~_BV(PIN)
+#define set_pin(PORT, PIN, VALUE) PORT = (PORT & ~_BV(PIN)) | ((VALUE==0)<<PIN)
+#define toggle_pin(PORT, PIN) PORT ^= _BV(PIN)
+#define read_pin(PORT, PIN) bit_is_set(PORT, PIN)
 
 #endif
