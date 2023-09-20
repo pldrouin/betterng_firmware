@@ -3,18 +3,18 @@
 int main(void)
 {
     //uint8_t eebyte = eeprom_read_byte((uint8_t*)0);
-    set_output(BUZZ_DDR, BUZZ_NO); //Set buzzer pin as an output
-    set_output(MCU_LED_DDR, MCU_LED_NO); //Set buzzer pin as an output
+    set_output(BUZZ); //Set buzzer pin as an output
+    set_output(MCU_LED); //Set buzzer pin as an output
 
     /* Initialization */    
     inituart(19200); // Initialize UART.
     sei();
 
-    set_pin(BUZZ_PORT, BUZZ_NO, false);
-    set_pin(MCU_LED_PORT, MCU_LED_NO, false);
+    set_pin(BUZZ, false);
+    set_pin(MCU_LED, false);
     _delay_ms(1000);
-    set_pin(BUZZ_PORT, BUZZ_NO, true);
-    set_pin(MCU_LED_PORT, MCU_LED_NO, true);
+    set_pin(BUZZ, true);
+    set_pin(MCU_LED, true);
 
     struct cmd cmd;
     watchdogConfig(WATCHDOG_1S);

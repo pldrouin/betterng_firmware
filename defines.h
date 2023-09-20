@@ -80,10 +80,10 @@ static inline void watchdogConfig(uint8_t x)
 #define MCU_LED_PORT       PORTD
 #define MCU_LED_NO         PD7
 
-#define set_output(DDR, PIN) DDR |= _BV(PIN)
-#define set_input(DDR, PIN) DDR &= ~_BV(PIN)
-#define set_pin(PORT, PIN, VALUE) PORT = (PORT & ~_BV(PIN)) | ((VALUE==0)<<PIN)
-#define toggle_pin(PORT, PIN) PORT ^= _BV(PIN)
-#define read_pin(PORT, PIN) bit_is_set(PORT, PIN)
+#define set_output(PIN) PIN ## _DDR |= _BV(PIN ## _NO)
+#define set_input(PIN) PIN ## _DDR &= ~_BV(PIN ## _NO)
+#define set_pin(PIN, VALUE) PIN ## _PORT = (PIN ## _PORT & ~_BV(PIN ## _NO)) | ((VALUE==0)<<PIN ## _NO)
+#define toggle_pin(PIN) PIN ## _PORT ^= _BV(PIN ## _NO)
+#define read_pin(PIN) bit_is_set(PIN ## _PORT, PIN ## _NO)
 
 #endif
