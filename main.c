@@ -7,7 +7,8 @@ int main(void)
     set_output(MCU_LED); //Set buzzer pin as an output
 
     /* Initialization */    
-    inituart(19200); // Initialize UART.
+    inituart(115200); // Initialize UART.
+    initadc(); // Initialize UART.
     sei();
 
     set_pin(BUZZ, false);
@@ -20,11 +21,12 @@ int main(void)
     watchdogConfig(WATCHDOG_1S);
 
     while(1) {
-
       //if(!read_pin(OVERTEMP_PORT, OVERTEMP_NO)) set_pin(BUZZ_PORT, BUZZ_NO, true);
       read_cmd(&cmd);
       //uart_blocking_send_bytes("Hello World!\n\r", 14);
       //uart_send_bytes("Hello World!\n\r", 14);
+      //uart_send_byte(0xAA);
+      //_delay_ms(1000);
       watchdogReset();
     }
 }
