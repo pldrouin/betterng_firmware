@@ -7,6 +7,7 @@
 
 #include "serial.h"
 #include "adc.h"
+#include "fan.h"
 #include "cmd.h"
 
 int main(void);

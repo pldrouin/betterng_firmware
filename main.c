@@ -8,14 +8,15 @@ int main(void)
 
     /* Initialization */    
     inituart(115200); // Initialize UART.
+    initfans(); //Initialize fans.
     initadc(); // Initialize UART.
     sei();
 
-    set_pin(BUZZ, false);
-    set_pin(MCU_LED, false);
-    _delay_ms(1000);
     set_pin(BUZZ, true);
     set_pin(MCU_LED, true);
+    _delay_ms(1000);
+    set_pin(BUZZ, false);
+    set_pin(MCU_LED, false);
 
     struct cmd cmd;
     watchdogConfig(WATCHDOG_1S);

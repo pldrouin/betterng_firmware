@@ -8,7 +8,7 @@
 MCU = atmega16
 FORMAT = ihex
 TARGET = firmware
-SRC = main.c serial.c cmd.c adc.c
+SRC = main.c serial.c cmd.c adc.c fan.c
 DEP = $(SRC:.c=.d)
 ASRC = 
 OPT = s

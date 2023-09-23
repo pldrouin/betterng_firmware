@@ -100,6 +100,26 @@ static inline void watchdogConfig(uint8_t x)
 
 #define UART_BUFFER_SIZE	32
 
+#define NFANS			4
+
+#define FAN_ADC_DDR	DDRA
+#define FAN_ADC_FIRST_NO	0
+
+#define FAN_DC_DDR	DDRB
+#define FAN_DC_PORT	PORTB
+#define FAN_DC_FIRST_NO	4
+
+#define FAN_PWM_DDR	DDRB
+#define FAN_PWM_PORT	PORTB
+#define FAN_PWM_FIRST_NO	0
+
+#define FAN_TACH_DDR	DDRD
+#define FAN_TACH_FIRST_NO	2
+
+#define FAN_RPM_DDR	DDRC
+#define FAN_RPM_PORT	PORTC
+#define FAN_RPM_FIRST_NO	4
+
 #define BUZZ_DDR        DDRD
 #define BUZZ_PORT       PORTD
 #define BUZZ_NO         PD6
@@ -113,7 +133,7 @@ static inline void watchdogConfig(uint8_t x)
 
 #define set_output(PIN) PIN ## _DDR |= _BV(PIN ## _NO)
 #define set_input(PIN) PIN ## _DDR &= ~_BV(PIN ## _NO)
-#define set_pin(PIN, VALUE) PIN ## _PORT = (PIN ## _PORT & ~_BV(PIN ## _NO)) | ((VALUE==0)<<PIN ## _NO)
+#define set_pin(PIN, VALUE) PIN ## _PORT = (PIN ## _PORT & ~_BV(PIN ## _NO)) | ((VALUE!=0)<<PIN ## _NO)
 #define toggle_pin(PIN) PIN ## _PORT ^= _BV(PIN ## _NO)
 #define read_pin(PIN) bit_is_set(PIN ## _PORT, PIN ## _NO)
 
