@@ -45,11 +45,11 @@ void inituart(long baudrate)
  
   if(baudrate<=19200) {
     UART_CONTROL_REG_A &= ~_BV(ENABLE_DOUBLE_SPEED);
-    prescale = ((CPU_FREQ / (baudrate * 16UL))) - 1;
+    prescale = ((F_CPU / (baudrate * 16UL))) - 1;
 
   } else {
     UART_CONTROL_REG_A |= _BV(ENABLE_DOUBLE_SPEED);
-    prescale = ((CPU_FREQ / (baudrate * 8UL))) - 1;
+    prescale = ((F_CPU / (baudrate * 8UL))) - 1;
   }
   BAUD_RATE_LOW_REG = prescale;
   BAUD_RATE_HIGH_REG = (prescale >> 8);

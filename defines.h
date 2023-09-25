@@ -13,7 +13,7 @@
 #endif
 
 /* baud rate register value calculation */
-#define	CPU_FREQ	16000000
+#define F_CPU   16000000
 
 #define WDTCSR	    WDTCR
 #define WDCE        WDTOE
@@ -67,6 +67,40 @@ static inline void watchdogConfig(uint8_t x)
 #define UART_RX_INTR_FUNC	USART_RXC_vect
 #define UART_DRE_INTR_FUNC	USART_UDRE_vect
 
+#define SCL_DDR		DDRC
+#define SCL_PORT		PORTC
+#define SCL_NO		0
+
+#define SDA_DDR		DDRC
+#define SDA_PORT		PORTC
+#define SDA_NO		1
+
+#define TWI_BIT_STATUS_REG	TWBR
+#define TWI_STATUS_BIT_7	TWS7
+#define TWI_STATUS_BIT_6	TWS6
+#define TWI_STATUS_BIT_5	TWS5
+#define TWI_STATUS_BIT_4	TWS4
+#define TWI_STATUS_BIT_3	TWS3
+#define TWI_PRESCALER_BIT_1	TWPS1
+#define TWI_PRESCALER_BIT_0	TWPS0
+
+#define TWI_BIT_RATE_REG	TWBR
+
+#define TWI_CONTROL_REG		TWCR
+#define TWI_INTERRUPT_FLAG	TWINT
+#define TWI_ENABLE_ACK_BIT	TWEA
+#define TWI_START_CONDITION_BIT	TWSTA
+#define TWI_STOP_CONDITION_BIT	TWSTO
+#define TWI_WRITE_COLLISION_FLAG TWWC
+#define TWI_ENABLE_BIT		TWEN
+#define TWI_INTERRUPT_ENABLE	TWIE
+
+#define TWI_INTR_FUNC	TWI_vect
+
+#define TWI_SLAVE_ADDR_REG	TWAR
+
+#define TWI_DATA_REG		TWDR
+
 #define ADC_CTRL_STATUS_REG	ADCSRA
 #define ENABLE_ADC		ADEN
 #define	ADC_START_CONVERSION	ADSC
@@ -96,7 +130,6 @@ static inline void watchdogConfig(uint8_t x)
 #define ADC_MUX_SELECT_BIT0	MUX0
 
 #define ADC_INTR_FUNC	ADC_vect
-
 
 #define UART_BUFFER_SIZE	32
 
@@ -134,6 +167,7 @@ static inline void watchdogConfig(uint8_t x)
 #define set_output(PIN) PIN ## _DDR |= _BV(PIN ## _NO)
 #define set_input(PIN) PIN ## _DDR &= ~_BV(PIN ## _NO)
 #define set_pin(PIN, VALUE) PIN ## _PORT = (PIN ## _PORT & ~_BV(PIN ## _NO)) | ((VALUE!=0)<<PIN ## _NO)
+#define set_pin_pullup(PIN, VALUE) set_pin(PIN, VALUE)
 #define toggle_pin(PIN) PIN ## _PORT ^= _BV(PIN ## _NO)
 #define read_pin(PIN) bit_is_set(PIN ## _PORT, PIN ## _NO)
 
