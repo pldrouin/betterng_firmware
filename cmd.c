@@ -5,6 +5,7 @@ void reset_cmd(const struct cmd*);
 
 static inline bool check_one_byte(const struct cmd* cmd){return (cmd->byte1==cmd->id);}
 static inline bool check_two_bytes(const struct cmd* cmd){return (cmd->byte2==cmd->id+cmd->byte1);}
+static inline bool check_three_bytes(const struct cmd* cmd){return (cmd->byte3==cmd->id+cmd->byte1+cmd->byte2);}
 
 static void (*input_cmd_array[255])(const struct cmd*)={
   ping_cmd, //0
@@ -21,11 +22,17 @@ int read_cmd(struct cmd* cmd)
 
     if(check_one_byte(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
     return 1;
+
+  } else if(nbytes==2) {
+    uart_blocking_receive_bytes(&cmd->byte1, 2);
+
+    if(check_two_bytes(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
+    return 2;
   }
 
-  uart_blocking_receive_bytes(&cmd->byte1, 2);
+  uart_blocking_receive_bytes(&cmd->byte1, 3);
 
-  if(check_two_bytes(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
+  if(check_three_bytes(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
   return 2;
 }
 

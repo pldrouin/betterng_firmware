@@ -19,5 +19,6 @@ main.o main.d : main.c main.h \
  /home/pldrouin/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include/avr/eeprom.h \
  serial.h \
  /home/pldrouin/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include/avr/interrupt.h \
- adc.h fan.h cmd.h \
- /home/pldrouin/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/lib/gcc/avr/7.3.0/include/stdbool.h
+ fan.h adc.h lm75a.h utility/twi.h \
+ /home/pldrouin/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/lib/gcc/avr/7.3.0/include/stdbool.h \
+ analog_sensor.h cmd.h

@@ -129,6 +129,8 @@ static inline void watchdogConfig(uint8_t x)
 #define ADC_MUX_SELECT_BIT1	MUX1
 #define ADC_MUX_SELECT_BIT0	MUX0
 
+#define ADC_NCHANNELS	(8U)
+
 #define ADC_INTR_FUNC	ADC_vect
 
 #define UART_BUFFER_SIZE	32
@@ -163,6 +165,11 @@ static inline void watchdogConfig(uint8_t x)
 #define MCU_LED_DDR        DDRD
 #define MCU_LED_PORT       PORTD
 #define MCU_LED_NO         PD7
+
+#define htole16(value) (value)
+#define htobe16(value) ((value&0xFF)<<8|((value>>8)&0xFF))
+#define le16toh(value) (value)
+#define be16toh(value) ((value<<8)|(value>>8))
 
 #define set_output(PIN) PIN ## _DDR |= _BV(PIN ## _NO)
 #define set_input(PIN) PIN ## _DDR &= ~_BV(PIN ## _NO)

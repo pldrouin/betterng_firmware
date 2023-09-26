@@ -5,5 +5,6 @@
 #include "defines.h"
 
 void initadc(void);
+uint16_t adc_getValue(const uint8_t index);
 
 #endif

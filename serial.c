@@ -1,7 +1,7 @@
 #include "serial.h"
 
-volatile struct uart_buffer readbuf;
-volatile struct uart_buffer writebuf;
+volatile static struct uart_buffer readbuf;
+volatile static struct uart_buffer writebuf;
 
 static inline int write_byte_to_uart_buf(struct uart_buffer volatile* buf, const uint8_t byte)
 {

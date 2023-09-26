@@ -4,6 +4,7 @@
 #include<stdint.h>
 
 #include "defines.h"
+#include "adc.h"
 
 void initfans(void);
 

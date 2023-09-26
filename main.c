@@ -18,12 +18,20 @@ int main(void)
     set_pin(BUZZ, false);
     set_pin(MCU_LED, false);
 
+    lm75a_begin();
+    lm75a_add_sensor(1);
+
     struct cmd cmd;
     watchdogConfig(WATCHDOG_1S);
 
+    cmd.id=2;
+
     while(1) {
       //if(!read_pin(OVERTEMP_PORT, OVERTEMP_NO)) set_pin(BUZZ_PORT, BUZZ_NO, true);
-      read_cmd(&cmd);
+      //read_cmd(&cmd);
+      cmd.byte1=lm75a_getValue(0)>>8;
+      cmd.byte2=cmd.id+cmd.byte1;
+      send_cmd(&cmd);
       //uart_blocking_send_bytes("Hello World!\n\r", 14);
       //uart_send_bytes("Hello World!\n\r", 14);
       //uart_send_byte(0xAA);
