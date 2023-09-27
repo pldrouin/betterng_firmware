@@ -135,7 +135,7 @@ static inline void watchdogConfig(uint8_t x)
 
 #define UART_BUFFER_SIZE	32
 
-#define NFANS			4
+#define N_MAX_FANS		4
 
 #define FAN_ADC_DDR	DDRA
 #define FAN_ADC_FIRST_NO	0

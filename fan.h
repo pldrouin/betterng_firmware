@@ -5,6 +5,7 @@
 
 #include "defines.h"
 #include "adc.h"
+#include "temp_sensors.h"
 
 void initfans(void);
 

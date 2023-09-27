@@ -1,7 +1,6 @@
 #include "temp_sensors.h"
 
 #define PARAM_SCALE (32767L)
-#define N_MAX_TEMP_SENSORS (LM75A_MAX_SENSORS+MAX_ANALOG_SENSORS+N_MAX_SOFT_TEMP_SENSORS)
 
 struct temp_sensor
 {
@@ -9,97 +8,102 @@ struct temp_sensor
   int16_t a2;
   int16_t a1;
   int16_t a0;
-  uint8_t type;
 };
 
 static struct temp_sensor lsensors[LM75A_MAX_SENSORS];
 static struct temp_sensor asensors[MAX_ANALOG_SENSORS];
 static struct temp_sensor ssensors[N_MAX_SOFT_TEMP_SENSORS];
-static struct temp_sensor* sensors[N_MAX_TEMP_SENSORS];
 
-static uint8_t nsensors=0;
+static uint8_t lsenslist[LM75A_MAX_SENSORS];
+static uint8_t nlsensors=0;
+static uint8_t asenslist[MAX_ANALOG_SENSORS];
+static uint8_t nasensors=0;
+static uint8_t ssenslist[N_MAX_SOFT_TEMP_SENSORS];
+static uint8_t nssensors=0;
 
-int8_t add_temp_sensor(const uint8_t type, const uint8_t id)
+int8_t add_temp_sensor(const uint8_t id, const uint8_t nmaxids, struct temp_sensor* const allsensors, uint8_t* const senslist, uint8_t* const nsens)
 {
-  int8_t ret;
-
-  switch(type) {
-
-    case LM75A_SENSOR:
-
-      if((ret=lm75a_add_sensor(id))<0) return ret;
-      sensors[nsensors]=lsensors+ret;
-      lsensors[ret].type=LM75A_SENSOR;
-      lsensors[ret].value=32767L;
-      lsensors[ret].a2=0;
-      lsensors[ret].a1=PARAM_SCALE;
-      lsensors[ret].a0=0;
-      break;
-
-    case ANALOG_TEMP_SENSOR:
-
-      if((ret=add_analog_sensor(id))<0) return ret;
-      sensors[nsensors]=asensors+ret;
-      asensors[ret].type=ANALOG_TEMP_SENSOR;
-      asensors[ret].value=32767L;
-      asensors[ret].a2=0;
-      asensors[ret].a1=PARAM_SCALE;
-      asensors[ret].a0=0;
-      break;
-
-    default: //SOFT_TEMP_SENSOR
-      if(id>=N_MAX_SOFT_TEMP_SENSORS) return -1;
-
-      uint8_t i;
-
-      for(i=0; i<nsensors; ++i)
-
-	if(sensors[i]==ssensors+id) return -1;
-      sensors[nsensors]=ssensors+id;
-      ssensors[id].type=SOFT_TEMP_SENSOR;
-      ssensors[id].value=32767L;
-      ssensors[id].a2=0;
-      ssensors[id].a1=0;
-      ssensors[id].a0=0;
-  }
-
-  return nsensors++;
-}
-
-int8_t del_temp_sensor(const uint8_t index)
-{
-  if(index>=nsensors) return -1;
+  if(id>=nmaxids) return -1;
   uint8_t i;
 
-  switch(sensors[index]->type) {
+  for(i=0; i<*nsens; ++i)
+    if(senslist[i]==id) return 0;
 
-    case LM75A_SENSOR:
-      lm75a_del_sensor(sensors[index]-lsensors);
-      uint8_t nlsensors=lm75a_get_nsensors()-1;
-
-      for(i=sensors[index]-lsensors; i<nlsensors; ++i) lsensors[i]=lsensors[i+1];
-      break;
-
-    case ANALOG_TEMP_SENSOR:
-      del_analog_sensor(sensors[index]-asensors);
-      uint8_t nasensors=get_n_analog_sensors();
-
-      for(i=sensors[index]-asensors; i<nasensors; ++i) asensors[i]=asensors[i+1];
-      break;
-  }
-  --nsensors;
-
-  for(i=index; i<nsensors; ++i) sensors[i]=sensors[i+1];
+  senslist[*nsens]=id;
+  allsensors[*nsens].value=TEMP_SENSOR_INVALID_VALUE;
+  allsensors[*nsens].a2=0;
+  allsensors[*nsens].a1=PARAM_SCALE;
+  allsensors[*nsens].a0=0;
+  ++*nsens;
   return 0;
 }
 
-int8_t set_temp_sensor_calib(const uint16_t index, const float a2, const float a1, const float a0)
+int8_t del_temp_sensor(const uint8_t id, const uint8_t nmaxids, struct temp_sensor* const allsensors, uint8_t* const senslist, uint8_t* const nsens)
 {
-  if(index>=nsensors) return -1;
-  sensors[index]->a0=a0;
-  sensors[index]->a1=(int16_t)(a1*PARAM_SCALE);
-  sensors[index]->a2=(int16_t)(a2*PARAM_SCALE*PARAM_SCALE);
+  if(id>=nmaxids) return -1;
+  uint8_t i;
+
+  for(i=0; i<*nsens; ++i)
+    if(senslist[i]==id) break;
+
+  if(i==*nsens) return -1;
+  --*nsens;
+
+  for(; i<*nsens; ++i) senslist[i]=senslist[i+1];
   return 0;
+}
+
+int8_t add_lm75a_temp_sensor(const uint8_t id)
+{
+  return add_temp_sensor(id, LM75A_MAX_SENSORS, lsensors, lsenslist, &nlsensors);
+}
+
+int8_t del_lm75a_temp_sensor(const uint8_t id)
+{
+  return del_temp_sensor(id, LM75A_MAX_SENSORS, lsensors, lsenslist, &nlsensors);
+}
+
+int8_t add_analog_temp_sensor(const uint8_t id)
+{
+  return add_temp_sensor(id, MAX_ANALOG_SENSORS, asensors, asenslist, &nasensors);
+}
+
+int8_t del_analog_temp_sensor(const uint8_t id)
+{
+  return del_temp_sensor(id, MAX_ANALOG_SENSORS, asensors, asenslist, &nasensors);
+}
+
+int8_t add_soft_temp_sensor(const uint8_t id)
+{
+  return add_temp_sensor(id, N_MAX_SOFT_TEMP_SENSORS, ssensors, ssenslist, &nssensors);
+}
+
+int8_t del_soft_temp_sensor(const uint8_t id)
+{
+  return del_temp_sensor(id, N_MAX_SOFT_TEMP_SENSORS, ssensors, ssenslist, &nssensors);
+}
+
+int8_t set_temp_sensor_calib(const uint16_t id, const uint8_t nmaxids, struct temp_sensor* const allsensors, const float a2, const float a1, const float a0)
+{
+  if(id>=nmaxids) return -1;
+  allsensors[id].a0=a0;
+  allsensors[id].a1=(int16_t)(a1*PARAM_SCALE);
+  allsensors[id].a2=(int16_t)(a2*PARAM_SCALE*PARAM_SCALE);
+  return 0;
+}
+int8_t set_lm75a_temp_sensor_calib(const uint16_t id, const float a2, const float a1, const float a0)
+{
+  return set_temp_sensor_calib(id, LM75A_MAX_SENSORS, lsensors, a2, a1, a0);
+}
+
+int8_t set_analog_temp_sensor_calib(const uint16_t id, const float a2, const float a1, const float a0)
+{
+  return set_temp_sensor_calib(id, MAX_ANALOG_SENSORS, asensors, a2, a1, a0);
+}
+
+int8_t set_soft_temp_sensor_calib(const uint16_t id, const float a2, const float a1, const float a0)
+{
+  return set_temp_sensor_calib(id, N_MAX_SOFT_TEMP_SENSORS, ssensors, a2, a1, a0);
 }
 
 void update_temp_values(void)
@@ -107,14 +111,14 @@ void update_temp_values(void)
   uint8_t i;
   int16_t value;
 
-  for(i=lm75a_get_nsensors()-1; i>=0; --i) {
-    value=lm75a_getValue(i);
-    lsensors[i].value=lsensors[i].a0 + (value*(lsensors[i].a1 + (((int32_t)value) * lsensors[i].a2)/PARAM_SCALE))/PARAM_SCALE;
+  for(i=0; i<nlsensors; ++i) {
+    value=lm75a_getValue(lsenslist[i]);
+    lsensors[lsenslist[i]].value=lsensors[lsenslist[i]].a0 + (value*(lsensors[lsenslist[i]].a1 + (((int32_t)value) * lsensors[lsenslist[i]].a2)/PARAM_SCALE))/PARAM_SCALE;
   }
 
-  for(i=get_n_analog_sensors()-1; i>=0; --i) {
-    value=analog_sensor_getValue(i);
-    asensors[i].value=asensors[i].a0 + (value*(asensors[i].a1 + (((int32_t)value) * asensors[i].a2)/PARAM_SCALE))/PARAM_SCALE;
+  for(i=0; i<nasensors; ++i) {
+    value=analog_sensor_getValue(asenslist[i]);
+    asensors[asenslist[i]].value=asensors[asenslist[i]].a0 + (value*(asensors[asenslist[i]].a1 + (((int32_t)value) * asensors[asenslist[i]].a2)/PARAM_SCALE))/PARAM_SCALE;
   }
 }
 

@@ -22,9 +22,6 @@
 #define LM75A_MAX_SENSORS	8
 
 void lm75a_begin(void);
-int8_t lm75a_add_sensor(const uint8_t id);
-int8_t lm75a_del_sensor(const uint8_t index);
-uint8_t lm75a_get_nsensors(void);
-int16_t lm75a_getValue(const uint8_t index);
+int16_t lm75a_getValue(const uint8_t id);
 
 #endif
