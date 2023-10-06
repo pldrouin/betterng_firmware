@@ -6,6 +6,6 @@
 #define ANALOG_SENSOR_INVALID_VALUE       32767L        // Just an arbritary value outside of the sensor limits
 #define MAX_ANALOG_SENSORS	4
 
-int16_t analog_sensor_getValue(const uint8_t index);
+int16_t analog_sensor_getValue(const uint8_t id);
 
 #endif

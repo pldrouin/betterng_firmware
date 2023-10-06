@@ -1,8 +1,9 @@
 #include <string.h>
 
 #include "defines.h"
-#include "util/delay.h"
-#include "avr/eeprom.h"
+#include <util/delay.h>
+#include <avr/eeprom.h>
+
 
 #include "serial.h"
 #include "fan.h"

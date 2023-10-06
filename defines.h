@@ -111,6 +111,7 @@ static inline void watchdogConfig(uint8_t x)
 #define	ADC_PRESCALE_BIT_1	ADPS1
 #define	ADC_PRESCALE_BIT_0	ADPS0
 
+#define	ADC_DATA_WORD_REG	ADCW
 #define	ADC_DATA_HIGH_REG	ADCH
 #define	ADC_DATA_LOW_REG	ADCL
 
@@ -129,7 +130,7 @@ static inline void watchdogConfig(uint8_t x)
 #define ADC_MUX_SELECT_BIT1	MUX1
 #define ADC_MUX_SELECT_BIT0	MUX0
 
-#define ADC_NCHANNELS	(8U)
+#define ADC_NCHANNELS	(8)
 
 #define ADC_INTR_FUNC	ADC_vect
 
@@ -138,6 +139,7 @@ static inline void watchdogConfig(uint8_t x)
 #define N_MAX_FANS		4
 
 #define FAN_ADC_DDR	DDRA
+#define FAN_ADC_PORT	PORTA
 #define FAN_ADC_FIRST_NO	0
 
 #define FAN_DC_DDR	DDRB
@@ -171,11 +173,11 @@ static inline void watchdogConfig(uint8_t x)
 #define le16toh(value) (value)
 #define be16toh(value) ((value<<8)|(value>>8))
 
-#define set_output(PIN) PIN ## _DDR |= _BV(PIN ## _NO)
-#define set_input(PIN) PIN ## _DDR &= ~_BV(PIN ## _NO)
-#define set_pin(PIN, VALUE) PIN ## _PORT = (PIN ## _PORT & ~_BV(PIN ## _NO)) | ((VALUE!=0)<<PIN ## _NO)
+#define set_output(PIN) (PIN ## _DDR |= _BV(PIN ## _NO))
+#define set_input(PIN) (PIN ## _DDR &= ~_BV(PIN ## _NO))
+#define set_pin(PIN, VALUE) (PIN ## _PORT = (PIN ## _PORT & ~_BV(PIN ## _NO)) | ((VALUE!=0)<<PIN ## _NO))
 #define set_pin_pullup(PIN, VALUE) set_pin(PIN, VALUE)
-#define toggle_pin(PIN) PIN ## _PORT ^= _BV(PIN ## _NO)
+#define toggle_pin(PIN) (PIN ## _PORT ^= _BV(PIN ## _NO))
 #define read_pin(PIN) bit_is_set(PIN ## _PORT, PIN ## _NO)
 
 #endif
