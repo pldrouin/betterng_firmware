@@ -168,13 +168,18 @@ static inline void watchdogConfig(uint8_t x)
 #define MCU_LED_PORT       PORTD
 #define MCU_LED_NO         PD7
 
+#define INT8_MAX_VALUE (127)
+#define UINT8_MAX_VALUE (255)
+#define INT16_MAX_VALUE (32767)
+#define UINT16_MAX_VALUE (65535)
+
 #define htole16(value) (value)
 #define htobe16(value) ((value&0xFF)<<8|((value>>8)&0xFF))
 #define le16toh(value) (value)
 #define be16toh(value) ((value<<8)|(value>>8))
 
-#define set_output(PIN) (PIN ## _DDR |= _BV(PIN ## _NO))
-#define set_input(PIN) (PIN ## _DDR &= ~_BV(PIN ## _NO))
+#define set_pin_as_output(PIN) (PIN ## _DDR |= _BV(PIN ## _NO))
+#define set_pin_as_input(PIN) (PIN ## _DDR &= ~_BV(PIN ## _NO))
 #define set_pin(PIN, VALUE) (PIN ## _PORT = (PIN ## _PORT & ~_BV(PIN ## _NO)) | ((VALUE!=0)<<PIN ## _NO))
 #define set_pin_pullup(PIN, VALUE) set_pin(PIN, VALUE)
 #define toggle_pin(PIN) (PIN ## _PORT ^= _BV(PIN ## _NO))

@@ -1,76 +1,59 @@
 #include "defines.h"
+#include <math.h>
 #include <util/delay.h>
 
 #include "fan.h"
 
-#define INT16_MAX_VALUE (32767)
-#define UINT16_MAX_VALUE (65535)
 #define MAX_FLOW_INVALID_VALUE (UINT16_MAX_VALUE)
 #define MIN_TACH_PERIOD_INVALID_VALUE (UINT16_MAX_VALUE)
-#define OFF_LEVEL_INVALID_VALUE (UINT16_MAX_VALUE)
-#define VNOOUT_INVALID_VALUE (INT16_MAX_VALUE)
-#define DVDOUT_INVALID_VALUE (INT16_MAX_VALUE)
-#define DTVDOUTT_INVALID_VALUE (INT16_MAX_VALUE)
+#define OFF_LEVEL_DEFAULT_VALUE (0x016D)
+#define DIFF_LEVEL_DEFAULT_VALUE (OFF_LEVEL_DEFAULT_VALUE)
 #define LAST_TEMP_INVALID_VALUE (INT16_MAX_VALUE)
-
-#define MAX_CURVE_NPOINTS (6)
-
-#define set_fan_pin(MODE, ID, VALUE) (FAN_ ## MODE ## _PORT = (FAN_ ## MODE ## _PORT & ~_BV(FAN_ ## MODE ## _FIRST_NO+ID)) | ((VALUE!=0)<<(FAN_ ## MODE ## _FIRST_NO+ID)))
-#define set_fan_output(MODE, ID) (FAN_ ## MODE ## _DDR |= _BV(FAN_ ## MODE ## _FIRST_NO+ID))
-#define set_fan_input(MODE, ID) (FAN_ ## MODE ## _DDR &= ~_BV(FAN_ ## MODE ## _FIRST_NO+ID))
-
-struct fan
-{
-  uint16_t max_flow;
-  uint16_t min_tach_period; //Minimum fan tach period (inverse of max speed)
-  uint16_t off_level; //Measured ADC voltage when MOSFET does not conduct (channel specific)
-  uint16_t on_level;  //Measured ADC voltage when MOSFET in maximum conduction (channel specific)
-  int16_t vnoout;     //Voltage when fan stops
-  int16_t dvdout;     //Voltage derivative with output 
-  int16_t d2vdout2;   //Second voltage derivative with output 
-  int16_t last_temp;
-  int16_t hysterisis;
-  int8_t direction;   //1=positive pressure, -1=negative pressure, 0=no pressure
-  bool pwm;
-  uint8_t lsenslist[LM75A_MAX_SENSORS];
-  uint8_t nlsensors;
-  uint8_t asenslist[MAX_ANALOG_SENSORS];
-  uint8_t nasensors;
-  uint8_t ssenslist[N_MAX_SOFT_TEMP_SENSORS];
-  uint8_t nssensors;
-  int8_t curve_temps[MAX_CURVE_NPOINTS];
-  uint8_t curve_outputs[MAX_CURVE_NPOINTS];
-  uint8_t ncurvepoints;
-  uint8_t output;
-};
 
 struct fan fans[N_MAX_FANS];
 uint8_t fanlist[N_MAX_FANS];
 uint8_t nfans=0;
+
+int8_t set_fan_output(const uint8_t id, const uint8_t output)
+{
+  if(id>=N_MAX_FANS) return -1;
+
+  if(output>0) {
+    float voltage = FAN_VNOOUT_SCALE*fans[id].vnoout + output * (FAN_DVDOUT_SCALE * fans[id].dvdout + output * FAN_D2VDOUT2_SCALE * fans[id].d2vdout2);
+    fans[id].level = (uint16_t)(fans[id].off_level - (voltage>FAN_MAX_VOLTAGE_SCALE?FAN_MAX_VOLTAGE_SCALE:(voltage<0?0:voltage))/FAN_MAX_VOLTAGE_SCALE * fans[id].diff_level);
+
+  //Completely turn off fan if desired output level is 0
+  } else fans[id].level = UINT16_MAX_VALUE;
+  fans[id].output = output;
+  return 0;
+}
 
 void initfans(void)
 {
   uint8_t id;
 
   for(id=0; id<N_MAX_FANS; ++id) {
-    set_fan_input(ADC, id);
+    set_fan_pin_as_input(ADC, id);
     set_fan_pin(ADC, id, false);
+    set_fan_pin(DC, id, false);
+    set_fan_pin_as_output(DC, id);
 
     fans[id].max_flow=MAX_FLOW_INVALID_VALUE;
     fans[id].min_tach_period=MIN_TACH_PERIOD_INVALID_VALUE;
-    fans[id].off_level=OFF_LEVEL_INVALID_VALUE;
-    fans[id].on_level=0;
-    fans[id].vnoout=VNOOUT_INVALID_VALUE;
-    fans[id].dvdout=DVDOUT_INVALID_VALUE;
-    fans[id].d2vdout2=DTVDOUTT_INVALID_VALUE;
+    fans[id].off_level=OFF_LEVEL_DEFAULT_VALUE;
+    fans[id].diff_level=DIFF_LEVEL_DEFAULT_VALUE;
+    fans[id].vnoout=FAN_VNOOUT_DEFAULT_VALUE;
+    fans[id].dvdout=FAN_DVDOUT_DEFAULT_VALUE;
+    fans[id].d2vdout2=FAN_D2VDOUT2_DEFAULT_VALUE;
     fans[id].direction=0;
-    fans[id].pwm=false;
+    fans[id].mode=VOLTAGE_MODE;
     fans[id].nlsensors=0;
     fans[id].nasensors=0;
     fans[id].nssensors=0;
     fans[id].last_temp=LAST_TEMP_INVALID_VALUE;
     fans[id].hysterisis=0;
     fans[id].ncurvepoints=0;
+    set_fan_output(id, FAN_DEFAULT_OUTPUT_VALUE);
   }
 }
 
@@ -115,65 +98,87 @@ int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t m
   return 0;
 }
 
-int8_t switch_fan_to_pwm_control(const uint8_t id)
+int8_t set_fan_voltage_response(const uint8_t id, const float v_no_out, const float dvdout, const float d2vdout2)
 {
   if(id>=N_MAX_FANS) return -1;
-  set_fan_pin(DC, id, false);
-  set_fan_output(DC, id);
-  set_fan_pin(PWM, id, false);
-  set_fan_output(PWM, id);
-  fans[id].pwm=true;
+
+  if(v_no_out < 0 || dvdout <= 0) return -2;
+  if(v_no_out+UINT8_MAX_VALUE*(dvdout + UINT8_MAX_VALUE*d2vdout2) > FAN_MAX_VOLTAGE_SCALE) return -3;
+  if(ceil(v_no_out/FAN_VNOOUT_SCALE) > UINT16_MAX_VALUE || ceil(dvdout/FAN_DVDOUT_SCALE) > UINT16_MAX_VALUE || round(d2vdout2/FAN_D2VDOUT2_SCALE) > INT16_MAX_VALUE) return -4;
+  fans[id].vnoout = (uint16_t)ceil(v_no_out/FAN_VNOOUT_SCALE);
+  fans[id].dvdout = (uint16_t)ceil(dvdout/FAN_DVDOUT_SCALE);
+  fans[id].d2vdout2 = (int16_t)round(d2vdout2/FAN_D2VDOUT2_SCALE);
   return 0;
 }
 
-int8_t switch_fan_to_voltage_control(const uint8_t id)
+int8_t switch_fan_control(const uint8_t id, uint8_t mode)
 {
   if(id>=N_MAX_FANS) return -1;
-  fans[id].pwm=false;
-  set_fan_pin(DC, id, false);
-  set_fan_output(DC, id);
-  set_fan_pin(PWM, id, false);
-  set_fan_input(PWM, id);
+
+  switch(mode) {
+    case VOLTAGE_MODE:
+      set_fan_pin(PWM, id, false);
+      set_fan_pin_as_input(PWM, id);
+      break;
+
+    case PWM_MODE:
+      set_fan_pin(DC, id, false);
+      set_fan_pin(PWM, id, false);
+      set_fan_pin_as_output(PWM, id);
+      break;
+
+    case MANUAL_MODE:
+      set_fan_pin(DC, id, false);
+      set_fan_pin(PWM, id, false);
+      set_fan_pin_as_output(PWM, id);
+      break;
+
+    default:
+      return -1;
+  }
+  fans[id].mode=mode;
   return 0;
 }
 
 int8_t fan_adc_calibration(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return -1;
-  bool prevmode=fans[id].pwm;
+  uint8_t prevmode=fans[id].mode;
   uint16_t avalue;
+  uint16_t on_level;
 
-  if(!prevmode) switch_fan_to_pwm_control(id);
+  switch_fan_control(id, MANUAL_MODE);
   set_fan_pin(PWM, id, false);
   watchdogConfig(WATCHDOG_OFF);
   _delay_ms(10000);
   watchdogConfig(WATCHDOG_1S);
-  fans[id].off_level=adc_getValue(id);
+  avalue=adc_getValue(id);
 
   do{
-    avalue=fans[id].off_level;
+    fans[id].off_level=avalue;
     _delay_ms(100);
-    fans[id].off_level=adc_getValue(id);
+    avalue=adc_getValue(id);
     watchdogReset();
 
-  } while(fans[id].off_level>avalue);
+  } while(avalue>fans[id].off_level);
 
   set_fan_pin(PWM, id, true);
   watchdogConfig(WATCHDOG_OFF);
   _delay_ms(10000);
   watchdogConfig(WATCHDOG_1S);
-  fans[id].on_level=adc_getValue(id);
+  avalue=adc_getValue(id);
 
   do{
-    avalue=fans[id].on_level;
+    on_level=avalue;
     _delay_ms(100);
-    fans[id].on_level=adc_getValue(id);
+    avalue=adc_getValue(id);
     watchdogReset();
 
-  } while(fans[id].on_level<avalue);
+  } while(avalue<on_level);
+  fans[id].diff_level=fans[id].off_level-on_level;
 
   set_fan_pin(PWM, id, false);
-  if(!prevmode) switch_fan_to_voltage_control(id);
+  switch_fan_control(id, prevmode);
   return 0;
 }
 

@@ -3,8 +3,8 @@
 int main(void)
 {
     //uint8_t eebyte = eeprom_read_byte((uint8_t*)0);
-    set_output(BUZZ); //Set buzzer pin as an output
-    set_output(MCU_LED); //Set buzzer pin as an output
+    set_pin_as_output(BUZZ); //Set buzzer pin as an output
+    set_pin_as_output(MCU_LED); //Set buzzer pin as an output
 
     /* Initialization */    
     inituart(115200); // Initialize UART.
@@ -19,6 +19,23 @@ int main(void)
     set_pin(MCU_LED, false);
 
     lm75a_begin();
+
+    fan_adc_calibration(0);
+    uart_send_bytes(get_fan_data(0),8);
+    fan_adc_calibration(1);
+    uart_send_bytes(get_fan_data(1),8);
+    fan_adc_calibration(2);
+    uart_send_bytes(get_fan_data(2),8);
+    fan_adc_calibration(3);
+    uart_send_bytes(get_fan_data(3),8);
+    set_fan_output(0, FAN_DEFAULT_OUTPUT_VALUE);
+    set_fan_output(1, FAN_DEFAULT_OUTPUT_VALUE);
+    set_fan_output(2, FAN_DEFAULT_OUTPUT_VALUE);
+    set_fan_output(3, FAN_DEFAULT_OUTPUT_VALUE);
+    uart_send_bytes(get_fan_data(0),20);
+    uart_send_bytes(get_fan_data(1),20);
+    uart_send_bytes(get_fan_data(2),20);
+    uart_send_bytes(get_fan_data(3),20);
 
     struct cmd cmd;
     //watchdogConfig(WATCHDOG_1S);
@@ -50,14 +67,6 @@ int main(void)
       uart_send_byte(0xDD);
       _delay_us(500000);
       */
-      fan_adc_calibration(0);
-      uart_send_bytes(get_fan_data(0),8);
-      fan_adc_calibration(1);
-      uart_send_bytes(get_fan_data(1),8);
-      fan_adc_calibration(2);
-      uart_send_bytes(get_fan_data(2),8);
-      fan_adc_calibration(3);
-      uart_send_bytes(get_fan_data(3),8);
 
       watchdogReset();
     }
