@@ -130,32 +130,32 @@ static inline void watchdogConfig(uint8_t x)
 #define ADC_MUX_SELECT_BIT1	MUX1
 #define ADC_MUX_SELECT_BIT0	MUX0
 
-#define ADC_NCHANNELS	(8)
+#define ADC_NCHANNELS	(8U)
 
 #define ADC_INTR_FUNC	ADC_vect
 
-#define UART_BUFFER_SIZE	32
+#define UART_BUFFER_SIZE	32U
 
-#define N_MAX_FANS		4
+#define N_MAX_FANS		4U
 
 #define FAN_ADC_DDR	DDRA
 #define FAN_ADC_PORT	PORTA
-#define FAN_ADC_FIRST_NO	0
+#define FAN_ADC_FIRST_NO	0U
 
 #define FAN_DC_DDR	DDRB
 #define FAN_DC_PORT	PORTB
-#define FAN_DC_FIRST_NO	4
+#define FAN_DC_FIRST_NO	4U
 
 #define FAN_PWM_DDR	DDRB
 #define FAN_PWM_PORT	PORTB
-#define FAN_PWM_FIRST_NO	0
+#define FAN_PWM_FIRST_NO	0U
 
 #define FAN_TACH_DDR	DDRD
-#define FAN_TACH_FIRST_NO	2
+#define FAN_TACH_FIRST_NO	2U
 
 #define FAN_RPM_DDR	DDRC
 #define FAN_RPM_PORT	PORTC
-#define FAN_RPM_FIRST_NO	4
+#define FAN_RPM_FIRST_NO	4U
 
 #define BUZZ_DDR        DDRD
 #define BUZZ_PORT       PORTD
@@ -169,9 +169,9 @@ static inline void watchdogConfig(uint8_t x)
 #define MCU_LED_NO         PD7
 
 #define INT8_MAX_VALUE (127)
-#define UINT8_MAX_VALUE (255)
+#define UINT8_MAX_VALUE (255U)
 #define INT16_MAX_VALUE (32767)
-#define UINT16_MAX_VALUE (65535)
+#define UINT16_MAX_VALUE (65535U)
 
 #define htole16(value) (value)
 #define htobe16(value) ((value&0xFF)<<8|((value>>8)&0xFF))

@@ -4,7 +4,7 @@
 #include "lm75a.h"
 #include "analog_sensor.h"
 
-#define N_MAX_SOFT_TEMP_SENSORS	2
+#define N_MAX_SOFT_TEMP_SENSORS	2U
 
 #define TEMP_SENSOR_INVALID_VALUE	32767L
 

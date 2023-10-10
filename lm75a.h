@@ -19,7 +19,7 @@
 
 #define LM75A_INVALID_VALUE       32767L        // Just an arbritary value outside of the sensor limits
 
-#define LM75A_MAX_SENSORS	8
+#define LM75A_MAX_SENSORS	8U
 
 void lm75a_begin(void);
 int16_t lm75a_getValue(const uint8_t id);

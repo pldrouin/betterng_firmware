@@ -15,11 +15,11 @@ static struct temp_sensor asensors[MAX_ANALOG_SENSORS];
 static struct temp_sensor ssensors[N_MAX_SOFT_TEMP_SENSORS];
 
 static uint8_t lsenslist[LM75A_MAX_SENSORS];
-static uint8_t nlsensors=0;
+static uint8_t nlsensors=0U;
 static uint8_t asenslist[MAX_ANALOG_SENSORS];
-static uint8_t nasensors=0;
+static uint8_t nasensors=0U;
 static uint8_t ssenslist[N_MAX_SOFT_TEMP_SENSORS];
-static uint8_t nssensors=0;
+static uint8_t nssensors=0U;
 
 int8_t add_temp_sensor(const uint8_t id, const uint8_t nmaxids, struct temp_sensor* const allsensors, uint8_t* const senslist, uint8_t* const nsens)
 {
@@ -91,6 +91,7 @@ int8_t set_temp_sensor_calib(const uint16_t id, const uint8_t nmaxids, struct te
   allsensors[id].a2=(int16_t)(a2*PARAM_SCALE*PARAM_SCALE);
   return 0;
 }
+
 int8_t set_lm75a_temp_sensor_calib(const uint16_t id, const float a2, const float a1, const float a0)
 {
   return set_temp_sensor_calib(id, LM75A_MAX_SENSORS, lsensors, a2, a1, a0);
