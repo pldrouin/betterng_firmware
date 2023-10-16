@@ -1,0 +1,6 @@
+# KDE Config file
+[General]
+Name=GNU Make Based AVR Application
+
+Category=C++/AVR (make)
+Icon=default-kdevelop

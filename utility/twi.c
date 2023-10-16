@@ -24,6 +24,8 @@
 #include <avr/interrupt.h>
 #include <compat/twi.h>
 
+#include "defines.h"
+
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif
@@ -31,8 +33,6 @@
 #ifndef sbi
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
-
-#include "defines.h"
 #include "utility/twi.h"
 
 static volatile uint8_t twi_state;

@@ -8,7 +8,7 @@
 MCU = atmega16
 FORMAT = ihex
 TARGET = firmware
-SRC = main.c serial.c cmd.c adc.c utility/twi.c lm75a.c analog_sensor.c temp_sensors.c fan.c
+SRC = main.c idle.c serial.c cmd.c adc.c utility/twi.c lm75a.c analog_sensor.c temp_sensors.c fan.c
 DEP = $(SRC:.c=.d)
 ASRC = 
 OPT = s
@@ -118,7 +118,7 @@ AVRDUDE_FLAGS = $(AVRDUDE_BASIC) $(AVRDUDE_NO_VERIFY) $(AVRDUDE_VERBOSE) $(AVRDU
 CC = avr-gcc
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
-SIZE = avr-size
+SIZE = avr-size -C
 NM = avr-nm
 AVRDUDE ?= avrdude
 REMOVE = rm -f
@@ -193,6 +193,7 @@ extcoff: $(TARGET).elf
 # Link: create ELF output file from object files.
 $(TARGET).elf: $(OBJ)
 	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
+	$(SIZE) --mcu $(MCU) $@
 
 $(DEP): %.d: %.c %.h
 	@echo "Generating dependency file $@"
@@ -206,16 +207,17 @@ include $(DEP)
 # Compile: create object files from C source files.
 .c.o:
 	$(CC) -c $(ALL_CFLAGS) $< -o $@ 
+	$(SIZE) --mcu=$(MCU) $@
 
 
 # Compile: create assembler files from C source files.
-.c.s:
-	$(CC) -S $(ALL_CFLAGS) $< -o $@
+#.c.s:
+#	$(CC) -S $(ALL_CFLAGS) $< -o $@
 
 
 # Assemble: create object files from assembler source files.
-.S.o:
-	$(CC) -c $(ALL_ASFLAGS) $< -o $@
+#.S.o:
+#	$(CC) -c $(ALL_ASFLAGS) $< -o $@
 
 
 

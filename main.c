@@ -5,6 +5,7 @@ int main(void)
     //uint8_t eebyte = eeprom_read_byte((uint8_t*)0);
 
     /* Initialization */    
+    idle_init();
     inituart(115200); // Initialize UART.
     initfans(); //Initialize fans.
     initadc(); // Initialize UART.
@@ -14,11 +15,16 @@ int main(void)
     set_pin_as_output(MCU_LED); //Set buzzer pin as an output
     set_pin(BUZZ, true);
     set_pin(MCU_LED, true);
-    _delay_ms(1000);
+    idle_delay_millis(1000);
     set_pin(BUZZ, false);
     set_pin(MCU_LED, false);
 
     lm75a_begin();
+
+    add_fan(0);
+    add_fan(1);
+    add_fan(2);
+    add_fan(3);
 
     fan_adc_calibration(0);
     uart_send_bytes(get_fan_data(0),20);
@@ -35,20 +41,21 @@ int main(void)
     set_fan_output(0, 1);
     set_fan_output(1, 1);
     set_fan_output(2, 1);
-    set_fan_output(3, 1);
-    _delay_us(100000);
+    set_fan_output(3, 127);
+    idle_delay_millis(100);
     uart_send_bytes(get_fan_data(0),20);
-    _delay_us(100000);
+    idle_delay_millis(100);
     uart_send_bytes(get_fan_data(1),20);
-    _delay_us(100000);
+    idle_delay_millis(100);
     uart_send_bytes(get_fan_data(2),20);
-    _delay_us(100000);
+    idle_delay_millis(100);
     uart_send_bytes(get_fan_data(3),20);
+    idle_delay_millis(100);
 
 
     //struct cmd cmd;
     //watchdogConfig(WATCHDOG_1S);
-    //uint16_t wval;
+    uint16_t wval;
 
     //cmd.id=2;
 
@@ -76,6 +83,20 @@ int main(void)
       uart_send_byte(0xDD);
       _delay_us(500000);
       */
+      idle_delay_block_minimum_millis_start(100);
+      wval=get_fan_rpm(0);
+      wval=htobe16(wval);
+      uart_send_bytes((uint8_t*)&wval,2);
+      wval=get_fan_rpm(1);
+      wval=htobe16(wval);
+      uart_send_bytes((uint8_t*)&wval,2);
+      wval=get_fan_rpm(2);
+      wval=htobe16(wval);
+      uart_send_bytes((uint8_t*)&wval,2);
+      wval=get_fan_rpm(3);
+      wval=htobe16(wval);
+      uart_send_bytes((uint8_t*)&wval,2);
+      idle_delay_block_end();
 
       watchdogReset();
     }
