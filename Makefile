@@ -118,7 +118,7 @@ AVRDUDE_FLAGS = $(AVRDUDE_BASIC) $(AVRDUDE_NO_VERIFY) $(AVRDUDE_VERBOSE) $(AVRDU
 CC = avr-gcc
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
-SIZE = avr-size -C
+SIZE = avr-size
 NM = avr-nm
 AVRDUDE ?= avrdude
 REMOVE = rm -f
@@ -207,7 +207,7 @@ include $(DEP)
 # Compile: create object files from C source files.
 .c.o:
 	$(CC) -c $(ALL_CFLAGS) $< -o $@ 
-	$(SIZE) --mcu=$(MCU) $@
+#	$(SIZE) --mcu=$(MCU) $@
 
 
 # Compile: create assembler files from C source files.

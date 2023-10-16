@@ -1,13 +1,15 @@
+#include <avr/pgmspace.h>
 #include "cmd.h"
 
 void ping_cmd(const struct cmd*);
 void reset_cmd(const struct cmd*);
 
-static inline bool check_one_byte(const struct cmd* cmd){return (cmd->byte1==cmd->id);}
-static inline bool check_two_bytes(const struct cmd* cmd){return (cmd->byte2==cmd->id+cmd->byte1);}
-static inline bool check_three_bytes(const struct cmd* cmd){return (cmd->byte3==cmd->id+cmd->byte1+cmd->byte2);}
+#define check_one_byte(cmd) (cmd->byte1==cmd->id)
+#define check_two_bytes(cmd) (cmd->byte2==cmd->id+cmd->byte1)
+#define check_three_bytes(cmd) (cmd->byte3==cmd->id+cmd->byte1+cmd->byte2)
 
-static void (*input_cmd_array[255])(const struct cmd*)={
+typedef void (*FP)(const struct cmd*);
+static const FP input_cmd_array[] PROGMEM = {
   ping_cmd, //0
   reset_cmd, //1
 };
