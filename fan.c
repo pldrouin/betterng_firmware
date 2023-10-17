@@ -50,6 +50,9 @@ void initfans(void)
     set_fan_pin(TACH, id, false);
     set_fan_pin_as_input(TACH, id);
 
+    set_fan_pin(RPM, id, false);
+    set_fan_pin_as_output(RPM, id);
+
     //fans[id].max_flow=MAX_FLOW_INVALID_VALUE;
     fans[id].prev_tach_pwm_ticks=0L;
     fans[id].cur_tach_pwm_ticks=0L;
@@ -70,9 +73,9 @@ void initfans(void)
     fans[id].pwm_counter_offset=(uint8_t)(((FAN_MAX_OUTPUT_VALUE+1.)*id)/N_MAX_FANS);
   }
 
-  FAN_OUTPUT_COMPARE_REG = TIMER_8BIT_ALARM(FAN_PWM_FREQ);
-  FAN_TIMER_CONTROL_REG = _BV(FAN_TIMER_WAVEFORM_MODE_BIT_1) | TIMER_8BIT_PRESCALER(FAN_PWM_FREQ);
-  FAN_TIMER_INTR_MASK_REG |= _BV(FAN_TIMER_ENABLE_COMPARE_MATCH_INTR);
+  FAN_OUTPUT_COMPARE_REG = FAN_TIMER_ALARM;
+  FAN_TIMER_CONTROL_REG = _BV(FAN_TIMER_WAVEFORM_MODE_BIT_1) | TIMER_FINE_8BIT_PRESCALER_SETTING(FAN_PWM_FREQ);
+  sbi(FAN_TIMER_INTR_MASK_REG, FAN_TIMER_ENABLE_COMPARE_MATCH_INTR);
 }
 
 int8_t add_fan(const uint8_t id)
@@ -166,7 +169,7 @@ int8_t fan_adc_calibration(const uint8_t id)
   //uint16_t on_level;
 
   switch_fan_control(id, MANUAL_MODE);
-  watchdogConfig(WATCHDOG_OFF);
+  //watchdogConfig(WATCHDOG_OFF);
   idle_delay_millis(1000);
   //watchdogConfig(WATCHDOG_1S);
   avalue=adc_getValue(id);
@@ -175,7 +178,7 @@ int8_t fan_adc_calibration(const uint8_t id)
     fans[id].off_level=avalue;
     idle_delay_millis(100);
     avalue=adc_getValue(id);
-    watchdogReset();
+    //watchdogReset();
 
   } while(avalue>fans[id].off_level);
 
@@ -210,11 +213,10 @@ uint8_t* get_fan_data(const uint8_t id)
 volatile uint16_t get_fan_rpm(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return 0;
-  //return convert_fan_rpm(fans[id].prev_tach_pwm_ticks);
-  return fans[id].prev_tach_pwm_ticks;
+  return convert_fan_rpm(fans[id].prev_tach_pwm_ticks);
 }
 
-ISR(TIMER0_COMP_vect)
+ISR(TIMER2_COMP_vect)
 {
   //Note: In PWM mode, a real tach signal is when the tach line is pulled low. A line
   //turning high following the end of the power pulse should be ignored.
@@ -225,6 +227,7 @@ ISR(TIMER0_COMP_vect)
 
   for(index=nfans; index>=0; --index) {
     id=fanlist[index];
+    //toggle_fan_pin(RPM, id);
 
     //If the tach pin went low during the current cycle
     if(fans[id].cur_tach_pwm_ticks>0) {
@@ -235,9 +238,10 @@ ISR(TIMER0_COMP_vect)
 	fans[id].cur_tach_pwm_ticks = 0;
 
 	//If the tach pin just went high
-      } else if(read_fan_pin(TACH, id)) {
+      } else if(read_fan_pin(TACH, id)!=0) {
 	fans[id].prev_tach_pwm_ticks = fans[id].cur_tach_pwm_ticks;
 	fans[id].cur_tach_pwm_ticks = 0;
+	set_fan_pin(RPM, id, true);
       }
 
       //Else if the tach pin has not gone low yet
@@ -251,8 +255,9 @@ ISR(TIMER0_COMP_vect)
 
 	//If the trigger just went low, and not because PWM is active and the
 	//PWM output is low, flip its sign
-      } else if(read_fan_pin(TACH, id)==0U && ((fans[id].mode&PWM_MODE)==0U || read_fan_pin(PWM, id))) {
+      } else if(read_fan_pin(TACH, id)==0 && ((fans[id].mode&PWM_MODE)==0 || read_fan_pin(PWM, id))) {
 	fans[id].cur_tach_pwm_ticks = -fans[id].cur_tach_pwm_ticks;
+	set_fan_pin(RPM, id, false);
       }
     }
 

@@ -11,6 +11,8 @@
 
 //Prescaler to 64, 250kHz @ 16 MHz F_CPU
 #define FAN_PWM_FREQ (22000UL)
+#define FAN_TIMER_PRESCALE TIMER_FINE_8BIT_PRESCALE(FAN_PWM_FREQ)
+#define FAN_TIMER_ALARM TIMER_FINE_8BIT_ALARM(FAN_PWM_FREQ)
 
 #define FAN_POSITIVE_PRESSURE (1)
 #define FAN_NEGATIVE_PRESSURE (-1)
@@ -25,9 +27,9 @@
 #define toggle_fan_pin(MODE, ID) (FAN_ ## MODE ## _PORT ^= _BV(FAN_ ## MODE ## _FIRST_NO+ID))
 #define set_fan_pin_as_output(MODE, ID) (sbi(FAN_ ## MODE ## _DDR, FAN_ ## MODE ## _FIRST_NO+ID))
 #define set_fan_pin_as_input(MODE, ID) (cbi(FAN_ ## MODE ## _DDR, FAN_ ## MODE ## _FIRST_NO+ID))
-#define read_fan_pin(MODE, ID) bit_is_set(FAN_ ## MODE ## _PORT, FAN_ ## MODE ## _FIRST_NO+ID)
+#define read_fan_pin(MODE, ID) (bit_is_set(FAN_ ## MODE ## _PIN, FAN_ ## MODE ## _FIRST_NO+ID)!=0)
 
-#define convert_fan_rpm(TACH_PWM_TICKS) ((uint16_t)((F_CPU/FAN_TIMER_PRESCALER)*(FAN_TIMER_ALARM+1.)/TACH_PWM_TICKS*60))
+#define convert_fan_rpm(TACH_PWM_TICKS) ((uint16_t)((F_CPU/FAN_TIMER_PRESCALE)*(uint32_t)60/(FAN_TIMER_ALARM+1)/TACH_PWM_TICKS))
 
 #define FAN_DEFAULT_OUTPUT_VALUE (128U)
 enum {VOLTAGE_MODE=_BV(0), PWM_MODE=_BV(1), MANUAL_MODE=_BV(2), DISABLED_MODE=_BV(7)};

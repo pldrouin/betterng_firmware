@@ -54,7 +54,7 @@ int main(void)
 
 
     //struct cmd cmd;
-    //watchdogConfig(WATCHDOG_1S);
+    watchdogConfig(WATCHDOG_1S);
     uint16_t wval;
 
     //cmd.id=2;

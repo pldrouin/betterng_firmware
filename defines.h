@@ -53,32 +53,62 @@ static inline void watchdogConfig(uint8_t x)
 #define TIMER_PRESCALER_256_BITS (_BV(TIMER_CLOCK_SELECT_BIT_2))
 #define TIMER_PRESCALER_1024_BITS (_BV(TIMER_CLOCK_SELECT_BIT_2)|_BV(TIMER_CLOCK_SELECT_BIT_0))
 
+#define TIMER_FINE_PRESCALER_OFF (0)
+#define TIMER_FINE_PRESCALER_1_BITS (_BV(TIMER_CLOCK_SELECT_BIT_0))
+#define TIMER_FINE_PRESCALER_8_BITS (_BV(TIMER_CLOCK_SELECT_BIT_1))
+#define TIMER_FINE_PRESCALER_32_BITS (_BV(TIMER_CLOCK_SELECT_BIT_1)|_BV(TIMER_CLOCK_SELECT_BIT_0))
+#define TIMER_FINE_PRESCALER_64_BITS (_BV(TIMER_CLOCK_SELECT_BIT_2))
+#define TIMER_FINE_PRESCALER_128_BITS (_BV(TIMER_CLOCK_SELECT_BIT_2)|_BV(TIMER_CLOCK_SELECT_BIT_0))
+#define TIMER_FINE_PRESCALER_256_BITS (_BV(TIMER_CLOCK_SELECT_BIT_2)|_BV(TIMER_CLOCK_SELECT_BIT_1))
+#define TIMER_FINE_PRESCALER_1024_BITS (_BV(TIMER_CLOCK_SELECT_BIT_2)|_BV(TIMER_CLOCK_SELECT_BIT_1)|_BV(TIMER_CLOCK_SELECT_BIT_0))
+
 //The following functions get optimized by a compiler down to literal constants
 //when a constant is provided as an argument
 //(F_CPU-1)/FREQ+1 computes "ceil(F_CPU/FREQ)"
 //8-bit functions valid when F_CPU/FREQ <= 1024*256 (FREQ>=62 Hz @ 16 MHz)
-#define TIMER_8BIT_PRESCALER(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>262144UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
-#define TIMER_8BIT_ALARM(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; ((uint8_t)(F_CPU/(ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>262144UL?1024.:256.):64.):8.):1)/FREQ - 0.5));})
+#define TIMER_8BIT_PRESCALER_SETTING(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>65536UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
+#define TIMER_8BIT_PRESCALE(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>65536UL?1024:256):64):8):1);})
+#define TIMER_8BIT_ALARM(FREQ) ({((uint8_t)(F_CPU/(double)TIMER_8BIT_PRESCALE(FREQ)/FREQ - 0.5));})
 
 //8-bit functions valid when F_CPU is a multiple of 1000 Hz and when F_CPU/1000*MILLIS <= 1024*256 (MILLIS<=16 ms @ 16 MHz)
-#define TIMER_8BIT_PRESCALER_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>262144UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
-#define TIMER_8BIT_ALARM_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; ((uint8_t)(F_CPU/1000/(ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>262144UL?1024.:256.):64.):8.):1)*MILLIS - 0.5));})
+#define TIMER_8BIT_PRESCALER_SETTING_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>65536UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
+#define TIMER_8BIT_PRESCALE_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>65536UL?1024:256):64):8):1);})
+#define TIMER_8BIT_ALARM_MILLIS(MILLIS) ({((uint8_t)(F_CPU/1000/(double)TIMER_8BIT_PRESCALE_MILLIS(MILLIS)*MILLIS - 0.5));})
 
 //8-bit functions valid when F_CPU*MICROS*1e-6 <= 1024*256 (MICROS<=16384 us @ 16 MHz)
-#define TIMER_8BIT_PRESCALER_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>262144UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
-#define TIMER_8BIT_ALARM_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); ((uint8_t)(F_CPU/(ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>262144UL?1024.:256.):64.):8.):1)*1e-6*MICROS - 0.5));})
+#define TIMER_8BIT_PRESCALER_SETTING_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>65536UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
+#define TIMER_8BIT_PRESCALE_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>16384U?(ncpucycles>65536UL?1024:256):64):8):1);})
+#define TIMER_8BIT_ALARM_MICROS(MICROS) ({((uint8_t)(F_CPU/(double)TIMER_8BIT_PRESCALE_MICROS(MICROS)*1e-6*MICROS - 0.5));})
+
+//8-bit functions valid when F_CPU/FREQ <= 1024*256 (FREQ>=62 Hz @ 16 MHz)
+#define TIMER_FINE_8BIT_PRESCALER_SETTING(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>8192?(ncpucycles>16384U?(ncpucycles>32768U?(ncpucycles>65536UL?TIMER_FINE_PRESCALER_1024_BITS:TIMER_FINE_PRESCALER_256_BITS):TIMER_FINE_PRESCALER_128_BITS):TIMER_FINE_PRESCALER_64_BITS):TIMER_FINE_PRESCALER_32_BITS):TIMER_FINE_PRESCALER_8_BITS):TIMER_FINE_PRESCALER_1_BITS);})
+#define TIMER_FINE_8BIT_PRESCALE(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>8192U?(ncpucycles>16384U?(ncpucycles>32768U?(ncpucycles>65536UL?1024:256):128):64):32):8):1);})
+#define TIMER_FINE_8BIT_ALARM(FREQ) ({((uint8_t)(F_CPU/(double)TIMER_FINE_8BIT_PRESCALE(FREQ)/FREQ - 0.5));})
+
+//8-bit functions valid when F_CPU is a multiple of 1000 Hz and when F_CPU/1000*MILLIS <= 1024*256 (MILLIS<=16 ms @ 16 MHz)
+#define TIMER_FINE_8BIT_PRESCALER_SETTING_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>8192?(ncpucycles>16384U?(ncpucycles>32768U?(ncpucycles>65536UL?TIMER_FINE_PRESCALER_1024_BITS:TIMER_FINE_PRESCALER_256_BITS):TIMER_FINE_PRESCALER_128_BITS):TIMER_FINE_PRESCALER_64_BITS):TIMER_FINE_PRESCALER_32_BITS):TIMER_FINE_PRESCALER_8_BITS):TIMER_FINE_PRESCALER_1_BITS);})
+#define TIMER_FINE_8BIT_PRESCALE_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>8192U?(ncpucycles>16384U?(ncpucycles>32768U?(ncpucycles>65536UL?1024:256):128):64):32):8):1);})
+#define TIMER_FINE_8BIT_ALARM_MILLIS(MILLIS) ({((uint8_t)(F_CPU/1000/(double)TIMER_FINE_8BIT_PRESCALE_MILLIS(MILLIS)*MILLIS - 0.5));})
+
+//8-bit functions valid when F_CPU*MICROS*1e-6 <= 1024*256 (MICROS<=16384 us @ 16 MHz)
+#define TIMER_FINE_8BIT_PRESCALER_SETTING_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>8192?(ncpucycles>16384U?(ncpucycles>32768U?(ncpucycles>65536UL?TIMER_FINE_PRESCALER_1024_BITS:TIMER_FINE_PRESCALER_256_BITS):TIMER_FINE_PRESCALER_128_BITS):TIMER_FINE_PRESCALER_64_BITS):TIMER_FINE_PRESCALER_32_BITS):TIMER_FINE_PRESCALER_8_BITS):TIMER_FINE_PRESCALER_1_BITS);})
+#define TIMER_FINE_8BIT_PRESCALE_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); (ncpucycles>256U?(ncpucycles>2048U?(ncpucycles>8192U?(ncpucycles>16384U?(ncpucycles>32768U?(ncpucycles>65536UL?1024:256):128):64):32):8):1);})
+#define TIMER_FINE_8BIT_ALARM_MICROS(MICROS) ({((uint8_t)(F_CPU/(double)TIMER_FINE_8BIT_PRESCALE_MICROS(MICROS)*1e-6*MICROS - 0.5));})
 
 //16-bit functions valid when F_CPU/FREQ <= 1024*65536 (FREQ>=1 Hz @ 16 MHz)
-#define TIMER_16BIT_PRESCALER(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
-#define TIMER_16BIT_ALARM(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; ((uint16_t)(F_CPU/(ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?1024.:256.):64.):8.):1)/FREQ - 0.5));})
+#define TIMER_16BIT_PRESCALER_SETTING(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
+#define TIMER_16BIT_PRESCALE(FREQ) ({const uint32_t ncpucycles=(F_CPU-1UL)/FREQ+1UL; (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?1024:256):64):8):1);})
+#define TIMER_16BIT_ALARM(FREQ) ({((uint16_t)(F_CPU/(double)TIMER_16BIT_PRESCALE(FREQ)/FREQ - 0.5));})
 
 //16-bit functions valid when F_CPU is a multiple of 1000 Hz and when F_CPU/1000*MILLIS <= 1024*65536 (MILLIS<=4194 ms @ 16 MHz)
-#define TIMER_16BIT_PRESCALER_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
-#define TIMER_16BIT_ALARM_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; ((uint16_t)(F_CPU/1000/(ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?1024.:256.):64.):8.):1)*MILLIS - 0.5));})
+#define TIMER_16BIT_PRESCALER_SETTING_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
+#define TIMER_16BIT_PRESCALE_MILLIS(MILLIS) ({const uint32_t ncpucycles=((F_CPU-1UL)/1000+1UL)*MILLIS; (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?1024:256):64):8):1);})
+#define TIMER_16BIT_ALARM_MILLIS(MILLIS) ({((uint16_t)(F_CPU/1000/(double)TIMER_16BIT_PRESCALE_MILLIS(MILLIS)*MILLIS - 0.5));})
 
 //16-bit functions valid when F_CPU*MICROS*1e-6 <= 1024*65536 (MICROS<=4194304 us @ 16 MHz)
-#define TIMER_16BIT_PRESCALER_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
-#define TIMER_16BIT_ALARM_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); ((uint16_t)(F_CPU/(ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?1024.:256.):64.):8.):1)*1e-6*MICROS - 0.5));})
+#define TIMER_16BIT_PRESCALER_SETTING_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?TIMER_PRESCALER_1024_BITS:TIMER_PRESCALER_256_BITS):TIMER_PRESCALER_64_BITS):TIMER_PRESCALER_8_BITS):TIMER_PRESCALER_1_BITS);})
+#define TIMER_16BIT_PRESCALE_MICROS(MICROS) ({const uint32_t ncpucycles=(uint32_t)ceil(F_CPU*1e-6*MICROS); (ncpucycles>65536UL?(ncpucycles>524288UL?(ncpucycles>4194304UL?(ncpucycles>16777216UL?1024:256):64):8):1);})
+#define TIMER_16BIT_ALARM_MICROS(MICROS) ({((uint16_t)(F_CPU/(double)TIMER_16BIT_PRESCALE_MICROS(MICROS)*1e-6*MICROS - 0.5));})
 
 #define IDLE_TIMER_CONTROL_REG			TCCR1B
 #define IDLE_TIMER_WAVEFORM_MODE_BIT_2		WGM12	
@@ -197,10 +227,12 @@ static inline void watchdogConfig(uint8_t x)
 
 #define FAN_PWM_DDR	DDRB
 #define FAN_PWM_PORT	PORTB
+#define FAN_PWM_PIN	PINB
 #define FAN_PWM_FIRST_NO	0U
 
 #define FAN_TACH_DDR	DDRD
 #define FAN_TACH_PORT	PORTD
+#define FAN_TACH_PIN	PIND
 #define FAN_TACH_FIRST_NO	2U
 
 #define FAN_RPM_DDR	DDRC
@@ -241,6 +273,6 @@ static inline void watchdogConfig(uint8_t x)
 #define set_pin(PIN, VALUE) (PIN ## _PORT = (PIN ## _PORT & ~_BV(PIN ## _NO)) | ((VALUE!=0)<<PIN ## _NO))
 #define set_pin_pullup(PIN, VALUE) set_pin(PIN, VALUE)
 #define toggle_pin(PIN) (PIN ## _PORT ^= _BV(PIN ## _NO))
-#define read_pin(PIN) bit_is_set(PIN ## _PORT, PIN ## _NO)
+#define read_pin(PIN) (bit_is_set(PIN ## _PIN, PIN ## _NO)!=0)
 
 #endif

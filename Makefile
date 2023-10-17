@@ -210,6 +210,9 @@ include $(DEP)
 #	$(SIZE) --mcu=$(MCU) $@
 
 
+.o.lss:
+	$(OBJDUMP) -h -S -z $< > $@
+
 # Compile: create assembler files from C source files.
 #.c.s:
 #	$(CC) -S $(ALL_CFLAGS) $< -o $@
