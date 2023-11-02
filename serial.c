@@ -2,8 +2,9 @@
 
 volatile static struct uart_buffer readbuf;
 volatile static struct uart_buffer writebuf;
+static uint16_t uart_byte_time=0;
 
-static inline int write_byte_to_uart_buf(struct uart_buffer volatile* buf, const uint8_t byte)
+static inline uint8_t write_byte_to_uart_buf(struct uart_buffer volatile* buf, const uint8_t byte)
 {
   uint8_t nextbyte = (buf->curwbyte + 1) % UART_BUFFER_SIZE;
   //curwbyte is never set to currbyte
@@ -11,20 +12,20 @@ static inline int write_byte_to_uart_buf(struct uart_buffer volatile* buf, const
   if(nextbyte != buf->currbyte) {
     buf->buf[buf->curwbyte] = byte;
     buf->curwbyte = nextbyte;
-    return 0;
+    return 1;
   }
-  return 1;
+  return 0;
 }
 
-static inline int read_byte_from_uart_buf(struct uart_buffer volatile* buf, uint8_t* byte)
+static inline uint8_t read_byte_from_uart_buf(struct uart_buffer volatile* buf, uint8_t* byte)
 {
   //currbyte can be set to curwbyte
   if(buf->currbyte != buf->curwbyte) {
     *byte=buf->buf[buf->currbyte];
     buf->currbyte = (buf->currbyte + 1) % UART_BUFFER_SIZE;
-    return 0;
+    return 1;
   }
-  return 1;
+  return 0;
 }
 
 static inline void flush_uart_buf(volatile struct uart_buffer* buf)
@@ -61,6 +62,8 @@ void inituart(long baudrate)
   // 1 stopbit
   //UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_EVEN_PARITY) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
   UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
+
+  uart_byte_time=9000000/baudrate;
 }
 
 // Called when data received from USART
@@ -72,8 +75,8 @@ ISR(UART_RX_INTR_FUNC)
   // Check for error
   if((UART_CONTROL_REG_A & (_BV(FRAME_ERROR_BIT) | _BV(DATA_OVERRUN_BIT) | _BV(PARITY_ERROR_BIT))) == 0) {
 
-    if(write_byte_to_uart_buf(&readbuf, byte)) {
-      //Disable interrupt when command complete
+    if(!write_byte_to_uart_buf(&readbuf, byte)) {
+      //Disable interrupt
       UART_CONTROL_REG_B &= ~_BV(ENABLE_RECEIVE_INTR);
     }
   }
@@ -84,43 +87,43 @@ ISR(UART_DRE_INTR_FUNC)
 {
   uint8_t byte;
 
-  if(read_byte_from_uart_buf(&writebuf, &byte)) UART_CONTROL_REG_B &= ~_BV(ENABLE_SEND_INTR);
+  if(!read_byte_from_uart_buf(&writebuf, &byte)) UART_CONTROL_REG_B &= ~_BV(ENABLE_SEND_INTR);
   
   else UART_DATA_REG = byte;
 }
 
 //Sends to UART buffer (non-blocking)
-unsigned int uart_send_byte( const uint8_t byte)
+uint8_t uart_send_byte(const uint8_t byte)
 {
-  unsigned int ret=write_byte_to_uart_buf(&writebuf, byte);
+  uint8_t ret=write_byte_to_uart_buf(&writebuf, byte);
   UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
   return ret;
 }
 
 //Receives from UART buffer (non-blocking)
-unsigned int uart_receive_byte( uint8_t* byte )
+uint8_t uart_receive_byte(uint8_t* byte)
 {
-  unsigned int ret=read_byte_from_uart_buf(&readbuf, byte);
+  uint8_t ret=read_byte_from_uart_buf(&readbuf, byte);
   UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
   return ret;
 }
 
 //Sends to UART buffer (non-blocking)
-unsigned int uart_send_bytes( const uint8_t* buf, const unsigned int len )
+unsigned int uart_send_bytes(const uint8_t* buf, const unsigned int len)
 {
   unsigned int i=0;
 
-  while(i<len && !write_byte_to_uart_buf(&writebuf, buf[i])) ++i;
+  while(i<len && write_byte_to_uart_buf(&writebuf, buf[i])) ++i;
   UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
   return i;
 }
 
 //Receives from UART buffer (non-blocking)
-unsigned int uart_receive_bytes( uint8_t* buf, const unsigned int len )
+unsigned int uart_receive_bytes(uint8_t* buf, const unsigned int len)
 {
   unsigned int i=0;
 
-  while(i<len && !read_byte_from_uart_buf(&readbuf, buf+i)) ++i;
+  while(i<len && read_byte_from_uart_buf(&readbuf, buf+i)) ++i;
   UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
   return i;
 }
@@ -138,10 +141,10 @@ void uart_blocking_flush_send(void)
 }
 
 //Sends to UART buffer
-void uart_blocking_send_byte( const uint8_t byte )
+void uart_blocking_send_byte(const uint8_t byte)
 {
   //Blocks if buffer is full
-  while(write_byte_to_uart_buf(&writebuf, byte));
+  while(!write_byte_to_uart_buf(&writebuf, byte));
   UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
 
   //Blocks while buffer is not empty
@@ -149,21 +152,21 @@ void uart_blocking_send_byte( const uint8_t byte )
 }
 
 //Receives from UART buffer
-void uart_blocking_receive_byte( uint8_t* byte )
+void uart_blocking_receive_byte(uint8_t* byte)
 {
   //Blocks if buffer is empty
-  while(read_byte_from_uart_buf(&readbuf, byte));
+  while(!read_byte_from_uart_buf(&readbuf, byte));
   UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
 }
 
 //Sends to UART buffer
-void uart_blocking_send_bytes( const uint8_t* buf, const unsigned int len )
+void uart_blocking_send_bytes(const uint8_t* buf, const unsigned int len)
 {
   unsigned int i=0;
 
   for(i=0; i<len; ++i) {
     //Blocks if buffer is full
-    while(write_byte_to_uart_buf(&writebuf, buf[i]));
+    while(!write_byte_to_uart_buf(&writebuf, buf[i]));
     UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
   }
 
@@ -172,14 +175,14 @@ void uart_blocking_send_bytes( const uint8_t* buf, const unsigned int len )
 }
 
 //Receives from UART buffer
-void uart_blocking_receive_bytes( uint8_t* buf, const unsigned int len )
+void uart_blocking_receive_bytes(uint8_t* buf, const unsigned int len)
 {
   unsigned int i=0;
 
   for(i=0; i<len; ++i) {
 
     //Blocks if buffer is empty
-    while(read_byte_from_uart_buf(&readbuf, buf+i));
+    while(!read_byte_from_uart_buf(&readbuf, buf+i));
     UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
   }
 }

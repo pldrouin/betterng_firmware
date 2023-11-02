@@ -5,7 +5,7 @@
 #include<avr/io.h>
 
 #include "defines.h"
-#include "idle.h"
+#include "timer.h"
 #include "adc.h"
 #include "temp_sensors.h"
 
@@ -32,7 +32,7 @@
 #define convert_fan_rpm(TACH_PWM_TICKS) ((uint16_t)((F_CPU/FAN_TIMER_PRESCALE)*(uint32_t)60/(FAN_TIMER_ALARM+1)/TACH_PWM_TICKS))
 
 #define FAN_DEFAULT_OUTPUT_VALUE (128U)
-enum {VOLTAGE_MODE=_BV(0), PWM_MODE=_BV(1), MANUAL_MODE=_BV(2), DISABLED_MODE=_BV(7)};
+enum {VOLTAGE_MODE=0, PWM_MODE=1, MANUAL_MODE=2, DISABLED_MODE=_BV(7), MODE_MASK=~DISABLED_MODE};
 
 #define FAN_MAX_OUTPUT_VALUE (UINT16_MAX)
 #define FAN_MAX_VOLTAGE_SCALE (12.)
@@ -65,9 +65,9 @@ struct fan
   uint8_t nasensors;
   uint8_t ssenslist[N_MAX_SOFT_TEMP_SENSORS];
   uint8_t nssensors;
-  //int8_t curve_temps[MAX_CURVE_NPOINTS];
-  //uint8_t curve_outputs[MAX_CURVE_NPOINTS];
-  //uint8_t ncurvepoints;
+  int8_t curve_temps[MAX_CURVE_NPOINTS];
+  uint8_t curve_outputs[MAX_CURVE_NPOINTS];
+  uint8_t ncurvepoints;
   uint8_t output;
   uint8_t pwm_counter_offset;
 };

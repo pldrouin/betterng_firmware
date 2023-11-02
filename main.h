@@ -4,7 +4,7 @@
 #include <avr/eeprom.h>
 
 
-#include "idle.h"
+#include "timer.h"
 #include "serial.h"
 #include "fan.h"
 #include "lm75a.h"

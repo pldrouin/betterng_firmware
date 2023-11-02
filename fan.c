@@ -68,7 +68,7 @@ void initfans(void)
     fans[id].nssensors=0U;
     fans[id].last_temp=LAST_TEMP_INVALID_VALUE;
     fans[id].hysterisis=0U;
-    //fans[id].ncurvepoints=0U;
+    fans[id].ncurvepoints=0U;
     set_fan_output(id, FAN_DEFAULT_OUTPUT_VALUE);
     fans[id].pwm_counter_offset=(uint8_t)(((FAN_MAX_OUTPUT_VALUE+1.)*id)/N_MAX_FANS);
   }
@@ -134,6 +134,7 @@ int8_t set_fan_voltage_response(const uint8_t id, const float v_no_out, const fl
 int8_t switch_fan_control(const uint8_t id, uint8_t mode)
 {
   if(id>=N_MAX_FANS) return -1;
+  mode&=MODE_MASK;
 
   switch(mode) {
     case VOLTAGE_MODE:
@@ -166,38 +167,23 @@ int8_t fan_adc_calibration(const uint8_t id)
   if(id>=N_MAX_FANS) return -1;
   uint8_t prevmode=fans[id].mode;
   uint16_t avalue;
+  int8_t i;
   //uint16_t on_level;
 
   switch_fan_control(id, MANUAL_MODE);
-  //watchdogConfig(WATCHDOG_OFF);
-  idle_delay_millis(1000);
-  //watchdogConfig(WATCHDOG_1S);
+  for(i=99; i>=0; --i) {
+    idle_timer_delay_millis(100);
+    watchdogReset();
+  }
   avalue=adc_getValue(id);
 
   do{
     fans[id].off_level=avalue;
-    idle_delay_millis(100);
-    avalue=adc_getValue(id);
-    //watchdogReset();
-
-  } while(avalue>fans[id].off_level);
-
-  /*
-  set_fan_pin(PWM, id, true);
-  watchdogConfig(WATCHDOG_OFF);
-  idle_delay_millis(1000);
-  watchdogConfig(WATCHDOG_1S);
-  avalue=adc_getValue(id);
-
-  do{
-    on_level=avalue;
-    idle_delay_millis(100);
+    idle_timer_delay_millis(100);
     avalue=adc_getValue(id);
     watchdogReset();
 
-  } while(avalue<on_level);
-  fans[id].diff_level=fans[id].off_level-on_level;
-  */
+  } while(avalue>fans[id].off_level);
 
   set_fan_pin(PWM, id, false);
   switch_fan_control(id, prevmode);

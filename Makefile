@@ -8,7 +8,7 @@
 MCU = atmega16
 FORMAT = ihex
 TARGET = firmware
-SRC = main.c idle.c serial.c cmd.c adc.c utility/twi.c lm75a.c analog_sensor.c temp_sensors.c fan.c
+SRC = main.c timer.c serial.c cmd.c adc.c utility/twi.c lm75a.c analog_sensor.c temp_sensors.c fan.c
 DEP = $(SRC:.c=.d)
 ASRC = 
 OPT = s
