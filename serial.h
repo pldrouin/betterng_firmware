@@ -25,9 +25,9 @@ void uart_blocking_receive_byte(uint8_t* byte);
 void uart_blocking_send_bytes(const uint8_t* buf, const unsigned int len);
 void uart_blocking_receive_bytes(uint8_t* buf, const unsigned int len);
 
-uint8_t uart_send_byte_timeout(const uint8_t byte, const uint16_t byte_us_timeout);
-uint8_t uart_receive_byte_timeout(uint8_t* byte, const uint16_t byte_us_timeout);
-unsigned int uart_send_bytes_timeout(const uint8_t* buf, const unsigned int len, const uint16_t byte_us_timeout);
-unsigned int uart_receive_bytes_timeout(uint8_t* buf, const unsigned int len, const uint16_t byte_us_timeout);
+uint8_t uart_send_byte_timeout(const uint8_t byte);
+uint8_t uart_receive_byte_timeout(uint8_t* byte);
+unsigned int uart_send_bytes_timeout(const uint8_t* buf, const unsigned int len);
+unsigned int uart_receive_bytes_timeout(uint8_t* buf, const unsigned int len);
 
 #endif

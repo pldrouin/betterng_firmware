@@ -2,7 +2,7 @@
 
 volatile static struct uart_buffer readbuf;
 volatile static struct uart_buffer writebuf;
-static uint16_t uart_byte_time=0;
+static uint16_t uart_byte_timeout=0;
 
 static inline uint8_t write_byte_to_uart_buf(struct uart_buffer volatile* buf, const uint8_t byte)
 {
@@ -63,7 +63,7 @@ void inituart(long baudrate)
   //UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_EVEN_PARITY) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
   UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
 
-  uart_byte_time=9000000/baudrate;
+  uart_byte_timeout=(9000000*UART_TIMEOUT_N_BYTE_DURATIONS+baudrate/2)/baudrate;
 }
 
 // Called when data received from USART
@@ -76,7 +76,7 @@ ISR(UART_RX_INTR_FUNC)
   if((UART_CONTROL_REG_A & (_BV(FRAME_ERROR_BIT) | _BV(DATA_OVERRUN_BIT) | _BV(PARITY_ERROR_BIT))) == 0) {
 
     if(!write_byte_to_uart_buf(&readbuf, byte)) {
-      //Disable interrupt
+      //Disable interrupt if read buffer is full
       UART_CONTROL_REG_B &= ~_BV(ENABLE_RECEIVE_INTR);
     }
   }
@@ -148,7 +148,7 @@ void uart_blocking_send_byte(const uint8_t byte)
   UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
 
   //Blocks while buffer is not empty
-  while(uart_buf_non_empty(&writebuf));
+  //while(uart_buf_non_empty(&writebuf));
 }
 
 //Receives from UART buffer
@@ -171,7 +171,7 @@ void uart_blocking_send_bytes(const uint8_t* buf, const unsigned int len)
   }
 
   //Blocks while buffer is not empty
-  while(uart_buf_non_empty(&writebuf));
+  //while(uart_buf_non_empty(&writebuf));
 }
 
 //Receives from UART buffer
@@ -185,4 +185,84 @@ void uart_blocking_receive_bytes(uint8_t* buf, const unsigned int len)
     while(!read_byte_from_uart_buf(&readbuf, buf+i));
     UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
   }
+}
+
+uint8_t uart_send_byte_timeout(const uint8_t byte)
+{
+  
+  if(!write_byte_to_uart_buf(&writebuf, byte)) {
+    timer_minimum_micros_start(uart_byte_timeout);
+
+    while(!timer_delay_verify()) {
+
+      if(write_byte_to_uart_buf(&writebuf, byte)) {
+        UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
+	return 1U;
+      }
+    }
+    return 0U;
+  }
+  UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
+  return 1U;
+}
+
+uint8_t uart_receive_byte_timeout(uint8_t* byte)
+{
+ 
+  if(!read_byte_from_uart_buf(&readbuf, byte)) {
+    timer_minimum_micros_start(uart_byte_timeout);
+
+    while(!timer_delay_verify()) {
+
+      if(read_byte_from_uart_buf(&readbuf, byte)) {
+        UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
+	return 1U;
+      }
+    }
+    return 0U;
+  }
+  UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
+  return 1U;
+}
+
+unsigned int uart_send_bytes_timeout(const uint8_t* buf, const unsigned int len)
+{
+  unsigned int i=0;
+
+  for(i=0; i<len; ++i) {
+
+    if(!write_byte_to_uart_buf(&writebuf, buf[i])) {
+      timer_minimum_micros_start(uart_byte_timeout);
+
+      while(!timer_delay_verify()) {
+
+	if(write_byte_to_uart_buf(&writebuf, buf[i])) goto send_bytes_timeout_recovered;
+      }
+      return i;
+    }
+send_bytes_timeout_recovered:
+    UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
+  }
+  return i;
+}
+
+unsigned int uart_receive_bytes_timeout(uint8_t* buf, const unsigned int len)
+{
+  unsigned int i=0;
+
+  for(i=0; i<len; ++i) {
+
+    if(!read_byte_from_uart_buf(&readbuf, buf+i)) {
+      timer_minimum_micros_start(uart_byte_timeout);
+
+      while(!timer_delay_verify()) {
+
+	if(read_byte_from_uart_buf(&readbuf, buf+i)) goto receive_bytes_timeout_recovered;
+      }
+      return i;
+    }
+receive_bytes_timeout_recovered:
+    UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
+  }
+  return i;
 }

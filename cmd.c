@@ -297,7 +297,8 @@ int read_cmd(struct cmd* cmd)
   const uint8_t nbytes=HOST_CMD_NBYTES(cmd->id)-1;
 
   if(nbytes==1) {
-    uart_blocking_receive_byte(&cmd->byte1);
+
+    if(uart_receive_byte_timeout(&cmd->byte1)!=1) return 0;
 
     if(check_one_byte(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
     /*
@@ -312,7 +313,8 @@ int read_cmd(struct cmd* cmd)
     return 1;
 
   } else if(nbytes==2) {
-    uart_blocking_receive_bytes(&cmd->byte1, 2);
+
+    if(uart_receive_bytes_timeout(&cmd->byte1, 2)!=2) return 0;
 
     if(check_two_bytes(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
     /*
@@ -326,7 +328,7 @@ int read_cmd(struct cmd* cmd)
     return 2;
   }
 
-  uart_blocking_receive_bytes(&cmd->byte1, 3);
+  if(uart_receive_bytes_timeout(&cmd->byte1, 3)!=3) return 0;
 
   if(check_three_bytes(cmd) && input_cmd_array[cmd->id]) input_cmd_array[cmd->id](cmd);
   /*

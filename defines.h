@@ -2,6 +2,7 @@
 #ifndef	_DEFINES_
 #define	_DEFINES_
 
+#include <math.h>
 #include <avr/sfr_defs.h>
 
 #define	_ATMEGA16	// device select: _ATMEGAxxxx
@@ -214,6 +215,7 @@ static inline void watchdogConfig(uint8_t x)
 #define ADC_INTR_FUNC	ADC_vect
 
 #define UART_BUFFER_SIZE	32U
+#define UART_TIMEOUT_N_BYTE_DURATIONS (2)
 
 #define N_MAX_FANS		4U
 
