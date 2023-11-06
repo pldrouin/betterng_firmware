@@ -23,7 +23,7 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output)
     //fans[id].level = (uint16_t)(fans[id].off_level - (voltage>FAN_MAX_VOLTAGE_SCALE?FAN_MAX_VOLTAGE_SCALE:(voltage<0?0:voltage))/FAN_MAX_VOLTAGE_SCALE * fans[id].diff_level);
     fans[id].level = (uint16_t)(fans[id].off_level * (1. - (voltage>FAN_MAX_VOLTAGE_SCALE?FAN_MAX_VOLTAGE_SCALE:(voltage<0?0:voltage))/FAN_MAX_VOLTAGE_SCALE));
 
-    if(fans[id].mode&DISABLED_MODE) switch_fan_control(id, fans[id].mode);
+    if(fans[id].mode&FAN_DISABLED_MODE) switch_fan_control(id, fans[id].mode);
 
   //Completely turn off fan if desired output level is 0
   } else {
@@ -31,7 +31,7 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output)
     set_fan_pin(DC, id, false);
     set_fan_pin(PWM, id, false);
     set_fan_pin_as_output(PWM, id);
-    fans[id].mode|=DISABLED_MODE;
+    fans[id].mode|=FAN_DISABLED_MODE;
   }
   fans[id].output = output;
   return 0;
@@ -62,7 +62,7 @@ void initfans(void)
     fans[id].dvdout=FAN_DVDOUT_DEFAULT_VALUE;
     fans[id].d2vdout2=FAN_D2VDOUT2_DEFAULT_VALUE;
     //fans[id].direction=0;
-    fans[id].mode=VOLTAGE_MODE;
+    fans[id].mode=FAN_VOLTAGE_MODE;
     fans[id].nlsensors=0U;
     fans[id].nasensors=0U;
     fans[id].nssensors=0U;
@@ -134,22 +134,22 @@ int8_t set_fan_voltage_response(const uint8_t id, const float v_no_out, const fl
 int8_t switch_fan_control(const uint8_t id, uint8_t mode)
 {
   if(id>=N_MAX_FANS) return -1;
-  mode&=MODE_MASK;
+  mode&=FAN_MODE_MASK;
 
   switch(mode) {
-    case VOLTAGE_MODE:
+    case FAN_VOLTAGE_MODE:
       set_fan_pin(DC, id, false);
       set_fan_pin(PWM, id, false);
       set_fan_pin_as_input(PWM, id);
       break;
 
-    case PWM_MODE:
+    case FAN_PWM_MODE:
       set_fan_pin(DC, id, false);
       set_fan_pin(PWM, id, false);
       set_fan_pin_as_output(PWM, id);
       break;
 
-    case MANUAL_MODE:
+    case FAN_MANUAL_MODE:
       set_fan_pin(DC, id, false);
       set_fan_pin(PWM, id, false);
       set_fan_pin_as_output(PWM, id);
@@ -170,7 +170,7 @@ int8_t fan_adc_calibration(const uint8_t id)
   int8_t i;
   //uint16_t on_level;
 
-  switch_fan_control(id, MANUAL_MODE);
+  switch_fan_control(id, FAN_MANUAL_MODE);
   for(i=99; i>=0; --i) {
     idle_timer_delay_millis(100);
     watchdogReset();
@@ -241,14 +241,14 @@ ISR(TIMER2_COMP_vect)
 
 	//If the trigger just went low, and not because PWM is active and the
 	//PWM output is low, flip its sign
-      } else if(read_fan_pin(TACH, id)==0 && ((fans[id].mode&PWM_MODE)==0 || read_fan_pin(PWM, id))) {
+      } else if(read_fan_pin(TACH, id)==0 && ((fans[id].mode&FAN_PWM_MODE)==0 || read_fan_pin(PWM, id))) {
 	fans[id].cur_tach_pwm_ticks = -fans[id].cur_tach_pwm_ticks;
 	set_fan_pin(RPM, id, false);
       }
     }
 
     //If fan is running in PWM mode
-    if(fans[id].mode&PWM_MODE) {
+    if(fans[id].mode&FAN_PWM_MODE) {
 
       if(pwm_counter+fans[id].pwm_counter_offset >= fans[id].output) set_fan_pin(PWM, id, false);
 

@@ -32,7 +32,7 @@ typedef void (*FP)(struct cmd*);
 const __flash FP input_cmd_array[] = {
   ping_cmd, //  0
   reset_cmd, //  1
-  get_fan_rpm_cmd, //  2
+  0, //  2
   0, //  3
   0, //  4
   0, //  5
@@ -282,7 +282,7 @@ const __flash FP input_cmd_array[] = {
   0, //249
   0, //250
   0, //251
-  0, //252
+  get_fan_rpm_cmd, //  252
   switch_fan_control_cmd, //253
   set_fan_output_cmd, //254
   ack_cmd, //255
@@ -341,7 +341,7 @@ int read_cmd(struct cmd* cmd)
     }
   }
   */
-  return 2;
+  return 3;
 }
 
 void ping_cmd(struct cmd* cmd)
