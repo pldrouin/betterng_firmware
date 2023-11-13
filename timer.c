@@ -12,10 +12,22 @@ void timer_init(void)
 bool timer_delay_verify(void)
 {
   if(timer_itr_set) {
-    timer_itr_set = false;
     TIMER_CONTROL_REG = _BV(TIMER_WAVEFORM_MODE_BIT_2) | TIMER_PRESCALER_OFF;
+    timer_itr_set = false;
     return true;
   }
+  return false;
+}
+
+bool timer_delay_end(void)
+{
+  if(timer_itr_set) {
+    TIMER_CONTROL_REG = _BV(TIMER_WAVEFORM_MODE_BIT_2) | TIMER_PRESCALER_OFF;
+    timer_itr_set = false;
+    return true;
+  }
+  TIMER_CONTROL_REG = _BV(TIMER_WAVEFORM_MODE_BIT_2) | TIMER_PRESCALER_OFF;
+  timer_itr_set = false;
   return false;
 }
 
@@ -32,12 +44,11 @@ void idle_timer_delay_apply(void)
 	oldSREG = SREG;
 	cli();
     }
-    timer_itr_set = false;
-    TIMER_CONTROL_REG = _BV(TIMER_WAVEFORM_MODE_BIT_2) | TIMER_PRESCALER_OFF;
     SREG = oldSREG;
+    TIMER_CONTROL_REG = _BV(TIMER_WAVEFORM_MODE_BIT_2) | TIMER_PRESCALER_OFF;
+    timer_itr_set = false;
 }
 
-ISR(TIMER1_COMPA_vect)
-{
+ISR(TIMER1_COMPA_vect) {
   timer_itr_set = true;
 }

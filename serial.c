@@ -121,6 +121,7 @@ unsigned int uart_send_bytes(const uint8_t* buf, const unsigned int len)
 //Receives from UART buffer (non-blocking)
 unsigned int uart_receive_bytes(uint8_t* buf, const unsigned int len)
 {
+  if(len==0) return 0;
   unsigned int i=0;
 
   while(i<len && read_byte_from_uart_buf(&readbuf, buf+i)) ++i;
@@ -162,7 +163,7 @@ void uart_blocking_receive_byte(uint8_t* byte)
 //Sends to UART buffer
 void uart_blocking_send_bytes(const uint8_t* buf, const unsigned int len)
 {
-  unsigned int i=0;
+  unsigned int i;
 
   for(i=0; i<len; ++i) {
     //Blocks if buffer is full
@@ -177,7 +178,8 @@ void uart_blocking_send_bytes(const uint8_t* buf, const unsigned int len)
 //Receives from UART buffer
 void uart_blocking_receive_bytes(uint8_t* buf, const unsigned int len)
 {
-  unsigned int i=0;
+  if(len==0) return;
+  unsigned int i;
 
   for(i=0; i<len; ++i) {
 
@@ -197,6 +199,7 @@ uint8_t uart_send_byte_timeout(const uint8_t byte)
 
       if(write_byte_to_uart_buf(&writebuf, byte)) {
         UART_CONTROL_REG_B |= _BV(ENABLE_SEND_INTR);
+	timer_delay_end();
 	return 1U;
       }
     }
@@ -216,6 +219,7 @@ uint8_t uart_receive_byte_timeout(uint8_t* byte)
 
       if(read_byte_from_uart_buf(&readbuf, byte)) {
         UART_CONTROL_REG_B |= _BV(ENABLE_RECEIVE_INTR);
+	timer_delay_end();
 	return 1U;
       }
     }
@@ -227,7 +231,7 @@ uint8_t uart_receive_byte_timeout(uint8_t* byte)
 
 unsigned int uart_send_bytes_timeout(const uint8_t* buf, const unsigned int len)
 {
-  unsigned int i=0;
+  unsigned int i;
 
   for(i=0; i<len; ++i) {
 
@@ -236,7 +240,10 @@ unsigned int uart_send_bytes_timeout(const uint8_t* buf, const unsigned int len)
 
       while(!timer_delay_verify()) {
 
-	if(write_byte_to_uart_buf(&writebuf, buf[i])) goto send_bytes_timeout_recovered;
+	if(write_byte_to_uart_buf(&writebuf, buf[i])) {
+	  timer_delay_end();
+	  goto send_bytes_timeout_recovered;
+	}
       }
       return i;
     }
@@ -248,7 +255,8 @@ send_bytes_timeout_recovered:
 
 unsigned int uart_receive_bytes_timeout(uint8_t* buf, const unsigned int len)
 {
-  unsigned int i=0;
+  if(len==0) return 0;
+  unsigned int i;
 
   for(i=0; i<len; ++i) {
 
@@ -257,7 +265,10 @@ unsigned int uart_receive_bytes_timeout(uint8_t* buf, const unsigned int len)
 
       while(!timer_delay_verify()) {
 
-	if(read_byte_from_uart_buf(&readbuf, buf+i)) goto receive_bytes_timeout_recovered;
+	if(read_byte_from_uart_buf(&readbuf, buf+i)) {
+	  timer_delay_end();
+	  goto receive_bytes_timeout_recovered;
+	}
       }
       return i;
     }

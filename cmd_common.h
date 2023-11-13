@@ -1,23 +1,19 @@
-#ifndef _CMD_IDS_
-#define _CMD_IDS_
+#ifndef _CMD_COMMON_
+#define _CMD_COMMON_
+
+#define N_MAX_CMD_BYTES 8
 
 struct cmd{
   uint8_t id;
-  uint8_t byte1;
-  uint8_t byte2;
-  uint8_t byte3;
+  uint8_t bytes[N_MAX_CMD_BYTES];
+  uint8_t nbytes; //Excludes command ID and checksum bytes
 } __attribute__((packed));
 
 #define MAX_PACKET_SIZE (sizeof(struct cmd))
 #define CMD_US_TIMEOUT (100000)
 
-#define check_one_byte(cmd) (((cmd)->byte1)==(uint8_t)(~((cmd)->id)))
-#define check_two_bytes(cmd) (((cmd)->byte2)==(uint8_t)(~((cmd)->id+(cmd)->byte1)))
-#define check_three_bytes(cmd) (((cmd)->byte3)==(uint8_t)(~((cmd)->id+(cmd)->byte1+(cmd)->byte2)))
-
-#define calc_check_one_byte(cmd) ((cmd)->byte1=~((cmd)->id))
-#define calc_check_two_bytes(cmd) ((cmd)->byte2=~((cmd)->id+(cmd)->byte1))
-#define calc_check_three_bytes(cmd) ((cmd)->byte3=~((cmd)->id+(cmd)->byte1+(cmd)->byte2))
+#define check_bytes(cmd) ({uint8_t check=(cmd)->id; uint8_t i; for(i=0; i<(cmd)->nbytes; ++i) check+=(cmd)->bytes[i]; ((cmd)->bytes[(cmd)->nbytes]==(uint8_t)~check);})
+#define calc_check_bytes(cmd) ({uint8_t check=(cmd)->id; uint8_t i; for(i=0; i<(cmd)->nbytes; ++i) check+=(cmd)->bytes[i]; (cmd)->bytes[(cmd)->nbytes]=(uint8_t)~check;})
 
 //Host/device commands
 #define PING_CMD_ID (0)
@@ -25,22 +21,22 @@ struct cmd{
 #define ACK_CMD_ID (255)
 
 //Host commands
-#define GET_FAN_RPM_CMD_REQ_ID (252)
-#define SWITCH_FAN_CONTROL_CMD_REQ_ID (253)
-#define SET_FAN_OUTPUT_CMD_REQ_ID (254)
+#define GET_FAN_RPM_CMD_REQ_ID (246) // 2 bytes
+#define GET_FAN_VOLTAGE_CMD_REQ_ID (247) // 2 bytes
+#define GET_FAN_VOLTAGE_TARGET_CMD_REQ_ID (248) // 2 bytes
+#define FAN_ADC_CALIBRATION_CMD_REQ_ID (249) // 2 bytes
+#define SWITCH_FAN_CONTROL_CMD_REQ_ID (250) // 3 bytes
+#define GET_FAN_OUTPUT_CMD_REQ_ID (251) //1 byte
+#define SET_FAN_OUTPUT_CMD_REQ_ID (252) //3 bytes
+#define GET_FAN_VOLTAGE_RESPONSE_CMD_REQ_ID (253) //2 bytes
+#define SET_FAN_VOLTAGE_RESPONSE_CMD_REQ_ID (254) //8 bytes
 
 //Device commands
-#define GET_FAN_RPM_CMD_RESP_ID (254)
-
-#define FIRST_TWO_BYTE_HOST_CMD_INDEX 2
-#define FIRST_THREE_BYTE_HOST_CMD_INDEX 252
-
-#define HOST_CMD_NBYTES(id) (2+(id>=FIRST_TWO_BYTE_HOST_CMD_INDEX)+(id>=FIRST_THREE_BYTE_HOST_CMD_INDEX))
-
-#define FIRST_TWO_BYTE_DEV_CMD_INDEX 2
-#define FIRST_THREE_BYTE_DEV_CMD_INDEX 254
-
-#define DEV_CMD_NBYTES(id) (2+(id>=FIRST_TWO_BYTE_DEV_CMD_INDEX)+(id>=FIRST_THREE_BYTE_DEV_CMD_INDEX))
+#define GET_FAN_RPM_CMD_RESP_ID (246) //3 bytes
+#define GET_FAN_VOLTAGE_CMD_RESP_ID (247) //3 bytes
+#define GET_FAN_VOLTAGE_TARGET_CMD_RESP_ID (248) //3 bytes
+#define GET_FAN_OUTPUT_CMD_RESP_ID (251) //7 bytes
+#define GET_FAN_VOLTAGE_RESPONSE_CMD_RESP_ID (253) //7 bytes
 
 enum {FAN_VOLTAGE_MODE=0, FAN_PWM_MODE=1, FAN_MANUAL_MODE=2, FAN_DISABLED_MODE=(1<<7), FAN_MODE_MASK=~FAN_DISABLED_MODE};
 

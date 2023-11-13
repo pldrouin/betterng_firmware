@@ -14,14 +14,19 @@ uint8_t nfans=0U;
 
 volatile static uint8_t pwm_counter=0;
 
+uint8_t get_fan_output(const uint8_t id)
+{
+  if(id>=N_MAX_FANS) return 0;
+  return fans[id].output;
+}
+
 int8_t set_fan_output(const uint8_t id, const uint8_t output)
 {
   if(id>=N_MAX_FANS) return -1;
 
   if(output>0U) {
-    float voltage = FAN_VNOOUT_SCALE*fans[id].vnoout + output * (FAN_DVDOUT_SCALE * fans[id].dvdout + output * FAN_D2VDOUT2_SCALE * fans[id].d2vdout2);
-    //fans[id].level = (uint16_t)(fans[id].off_level - (voltage>FAN_MAX_VOLTAGE_SCALE?FAN_MAX_VOLTAGE_SCALE:(voltage<0?0:voltage))/FAN_MAX_VOLTAGE_SCALE * fans[id].diff_level);
-    fans[id].level = (uint16_t)(fans[id].off_level * (1. - (voltage>FAN_MAX_VOLTAGE_SCALE?FAN_MAX_VOLTAGE_SCALE:(voltage<0?0:voltage))/FAN_MAX_VOLTAGE_SCALE));
+    uint16_t voltage = fans[id].vnoout + output*(uint32_t)fans[id].dvdout/250 + output*(int32_t)fans[id].d2vdout2*output/250000;
+    fans[id].level = fans[id].off_level - fans[id].off_level*(uint32_t)voltage/FAN_MAX_VOLTAGE_SCALE;
 
     if(fans[id].mode&FAN_DISABLED_MODE) switch_fan_control(id, fans[id].mode);
 
@@ -70,7 +75,7 @@ void initfans(void)
     fans[id].hysterisis=0U;
     fans[id].ncurvepoints=0U;
     set_fan_output(id, FAN_DEFAULT_OUTPUT_VALUE);
-    fans[id].pwm_counter_offset=(uint8_t)(((FAN_MAX_OUTPUT_VALUE+1.)*id)/N_MAX_FANS);
+    fans[id].pwm_counter_offset=(uint8_t)(((UINT8_MAX+1.)*id)/N_MAX_FANS);
   }
 
   FAN_OUTPUT_COMPARE_REG = FAN_TIMER_ALARM;
@@ -118,16 +123,29 @@ int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t m
   return 0;
 }
 
-int8_t set_fan_voltage_response(const uint8_t id, const float v_no_out, const float dvdout, const float d2vdout2)
+int8_t get_fan_voltage_response(const uint8_t id, uint16_t* v_no_out, uint16_t* dvdout, int16_t* d2vdout2)
+{
+  if(id>=N_MAX_FANS) {
+    *v_no_out = 0;
+    *dvdout = 0;
+    *d2vdout2 = 0;
+    return -1;
+  }
+  *v_no_out = fans[id].vnoout;
+  *dvdout = fans[id].dvdout;
+  *d2vdout2 = fans[id].d2vdout2;
+  return 0;
+}
+
+int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const uint16_t dvdout, const int16_t d2vdout2)
 {
   if(id>=N_MAX_FANS) return -1;
 
-  if(v_no_out < 0 || dvdout <= 0) return -2;
-  if(v_no_out+UINT8_MAX*(dvdout + UINT8_MAX*d2vdout2) > FAN_MAX_VOLTAGE_SCALE) return -3;
-  if(ceil(v_no_out/FAN_VNOOUT_SCALE) > UINT16_MAX || ceil(dvdout/FAN_DVDOUT_SCALE) > UINT16_MAX || round(d2vdout2/FAN_D2VDOUT2_SCALE) > INT16_MAX) return -4;
-  fans[id].vnoout = (uint16_t)ceil(v_no_out/FAN_VNOOUT_SCALE);
-  fans[id].dvdout = (uint16_t)ceil(dvdout/FAN_DVDOUT_SCALE);
-  fans[id].d2vdout2 = (int16_t)round(d2vdout2/FAN_D2VDOUT2_SCALE);
+  if(v_no_out+UINT8_MAX*(uint32_t)dvdout/250 + UINT8_MAX*(int32_t)d2vdout2*UINT8_MAX/250000 > FAN_MAX_VOLTAGE_SCALE) return -1; //Maximum voltage should not be exceeded
+  if((int32_t)(dvdout/250) < UINT8_MAX*(int32_t)-d2vdout2/125000) return -2; //Voltage should not drop when output increases
+  fans[id].vnoout = v_no_out;
+  fans[id].dvdout = dvdout;
+  fans[id].d2vdout2 = d2vdout2;
   return 0;
 }
 
@@ -196,10 +214,23 @@ uint8_t* get_fan_data(const uint8_t id)
   return (uint8_t*)(fans+id);
 }
 
-volatile uint16_t get_fan_rpm(const uint8_t id)
+uint16_t get_fan_rpm(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return 0;
-  return convert_fan_rpm(fans[id].prev_tach_pwm_ticks);
+  uint16_t rpm = convert_fan_rpm(fans[id].prev_tach_pwm_ticks);
+  return (rpm==convert_fan_rpm(INT16_MAX)?0:rpm);
+}
+
+uint16_t get_fan_voltage(const uint8_t id)
+{
+  if(id>=N_MAX_FANS) return 0;
+  return (uint16_t)((uint32_t)(fans[id].off_level - adc_getValue(id)) * FAN_MAX_VOLTAGE_SCALE / fans[id].off_level); 
+}
+
+uint16_t get_fan_voltage_target(const uint8_t id)
+{
+  if(id>=N_MAX_FANS) return 0;
+  return (uint16_t)((uint32_t)(fans[id].off_level - fans[id].level) * FAN_MAX_VOLTAGE_SCALE / fans[id].off_level); 
 }
 
 ISR(TIMER2_COMP_vect)

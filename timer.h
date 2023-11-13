@@ -42,6 +42,7 @@ void timer_init(void);
 })
 
 bool timer_delay_verify(void);
+bool timer_delay_end(void);
 void idle_timer_delay_apply(void);
 
 #define idle_timer_delay_millis(millis) ({timer_minimum_millis_start(millis); idle_timer_delay_apply();})
