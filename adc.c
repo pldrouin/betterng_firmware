@@ -1,7 +1,7 @@
 #include "adc.h"
 #include "fan.h"
 
-volatile static uint16_t adc_values[ADC_NCHANNELS];
+volatile static int16_t adc_values[ADC_NCHANNELS];
 volatile static uint8_t cur_adc_channel=0;
 
 void initadc(void)
@@ -12,7 +12,7 @@ void initadc(void)
   ADC_CTRL_STATUS_REG = _BV(ADC_START_CONVERSION) | _BV(ENABLE_ADC) | _BV(ENABLE_ADC_AUTO_TRIGGER) | _BV(ADC_INTERRUPT_ENABLE) | _BV(ADC_PRESCALE_BIT_2) | _BV(ADC_PRESCALE_BIT_1) | _BV(ADC_PRESCALE_BIT_0);
 }
 
-uint16_t adc_getValue(const uint8_t index)
+int16_t adc_getValue(const uint8_t index)
 {
   return adc_values[index];
 }

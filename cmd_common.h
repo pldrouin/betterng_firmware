@@ -29,7 +29,7 @@ struct cmd{
 #define GET_FAN_OUTPUT_CMD_REQ_ID (251) //1 byte
 #define SET_FAN_OUTPUT_CMD_REQ_ID (252) //3 bytes
 #define GET_FAN_VOLTAGE_RESPONSE_CMD_REQ_ID (253) //2 bytes
-#define SET_FAN_VOLTAGE_RESPONSE_CMD_REQ_ID (254) //8 bytes
+#define SET_FAN_VOLTAGE_RESPONSE_CMD_REQ_ID (254) //6 bytes
 
 //Device commands
 #define GET_FAN_RPM_CMD_RESP_ID (246) //3 bytes

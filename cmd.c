@@ -291,7 +291,7 @@ const __flash struct input_cmd input_cmds[] = {
     {get_fan_output_cmd, 1}, //251
     {set_fan_output_cmd, 2}, //252
     {get_fan_voltage_response_cmd, 1}, //253
-    {set_fan_voltage_response_cmd, 7}, //254
+    {set_fan_voltage_response_cmd, 5}, //254
     {ack_cmd, 2} //255
 };
 
@@ -397,7 +397,7 @@ void get_fan_voltage_response_cmd(struct cmd* cmd)
 
 void set_fan_voltage_response_cmd(struct cmd* cmd)
 {
-  int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), be16toh(*(uint16_t*)(cmd->bytes+3)), (int16_t)be16toh(*(int16_t*)(cmd->bytes+5)));
+  int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), be16toh(*(uint16_t*)(cmd->bytes+3)));
   ack(cmd->id, ret, cmd);
 }
 

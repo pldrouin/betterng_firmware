@@ -25,14 +25,14 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output)
   if(id>=N_MAX_FANS) return -1;
 
   if(output>0U) {
-    uint16_t voltage = fans[id].vnoout + output*(uint32_t)fans[id].dvdout/250 + output*(int32_t)fans[id].d2vdout2*output/250000;
+    uint16_t voltage = fans[id].vnoout + output*(uint32_t)fans[id].dvdout/UINT8_MAX + output*(int32_t)fans[id].d2vdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX);
     fans[id].level = fans[id].off_level - fans[id].off_level*(uint32_t)voltage/FAN_MAX_VOLTAGE_SCALE;
 
     if(fans[id].mode&FAN_DISABLED_MODE) switch_fan_control(id, fans[id].mode);
 
   //Completely turn off fan if desired output level is 0
   } else {
-    fans[id].level = UINT16_MAX;
+    fans[id].level = INT16_MAX;
     set_fan_pin(DC, id, false);
     set_fan_pin(PWM, id, false);
     set_fan_pin_as_output(PWM, id);
@@ -137,15 +137,13 @@ int8_t get_fan_voltage_response(const uint8_t id, uint16_t* v_no_out, uint16_t* 
   return 0;
 }
 
-int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const uint16_t dvdout, const int16_t d2vdout2)
+int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const uint16_t dvdout)
 {
   if(id>=N_MAX_FANS) return -1;
 
-  if(v_no_out+UINT8_MAX*(uint32_t)dvdout/250 + UINT8_MAX*(int32_t)d2vdout2*UINT8_MAX/250000 > FAN_MAX_VOLTAGE_SCALE) return -1; //Maximum voltage should not be exceeded
-  if((int32_t)(dvdout/250) < UINT8_MAX*(int32_t)-d2vdout2/125000) return -2; //Voltage should not drop when output increases
   fans[id].vnoout = v_no_out;
   fans[id].dvdout = dvdout;
-  fans[id].d2vdout2 = d2vdout2;
+  fans[id].d2vdout2 = calc_d2vdout2(v_no_out, dvdout);
   return 0;
 }
 
@@ -184,7 +182,7 @@ int8_t fan_adc_calibration(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return -1;
   uint8_t prevmode=fans[id].mode;
-  uint16_t avalue;
+  int16_t avalue;
   int8_t i;
   //uint16_t on_level;
 

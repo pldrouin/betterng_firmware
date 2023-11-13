@@ -36,22 +36,23 @@
 #define FAN_MAX_VOLTAGE_SCALE (12000) //in mV
 #define FAN_SAFE_WORKING_VOLTAGE (4000)
 #define FAN_VNOOUT_DEFAULT_VALUE (FAN_SAFE_WORKING_VOLTAGE)
-#define FAN_DVDOUT_DEFAULT_VALUE ((uint16_t)((uint32_t)(FAN_MAX_VOLTAGE_SCALE-FAN_SAFE_WORKING_VOLTAGE)*250/UINT8_MAX))
-#define FAN_D2VDOUT2_DEFAULT_VALUE ((int16_t)(0*250000/(UINT8_MAX*(uint16_t)UINT8_MAX)))
+#define FAN_DVDOUT_DEFAULT_VALUE ((uint16_t)(FAN_MAX_VOLTAGE_SCALE-FAN_SAFE_WORKING_VOLTAGE))
+#define calc_d2vdout2(v_no_out, dvdout) ((((int16_t)FAN_MAX_VOLTAGE_SCALE) - v_no_out - dvdout))
+#define FAN_D2VDOUT2_DEFAULT_VALUE (calc_d2vdout2(FAN_VNOOUT_DEFAULT_VALUE,FAN_DVDOUT_DEFAULT_VALUE))
 
 struct fan
 {
   //uint16_t max_flow;
   int16_t prev_tach_pwm_ticks;
   int16_t cur_tach_pwm_ticks; //Negative until tach line turns back low again
-  uint16_t off_level; //Measured (maximum) ADC voltage when MOSFET does not conduct (channel specific)
+  int16_t off_level; //Measured (maximum) ADC voltage when MOSFET does not conduct (channel specific)
   //uint16_t diff_level;//Measured ADC maximum voltage range
   uint16_t vnoout;     //Voltage when fan stops (units are mV)
-  uint16_t dvdout;     //Voltage derivative with output (units are 4 uV/output)
-  int16_t d2vdout2;    //Second voltage derivative with output (units are 4 nV/output^2)
+  uint16_t dvdout;     //Voltage derivative * max output (255) (mV)
+  int16_t d2vdout2;    //Second voltage derivative with output * max output * max output (mV)
   int16_t last_temp;
   uint16_t hysterisis;
-  uint16_t level; //Calculated target ADC level
+  int16_t level; //Calculated target ADC level
   //int8_t direction;   //1=positive pressure, -1=negative pressure, 0=no pressure
   uint8_t mode;
   uint8_t lsenslist[LM75A_MAX_SENSORS];
@@ -76,7 +77,7 @@ int8_t add_fan(const uint8_t id);
 int8_t del_fan(const uint8_t id);
 int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t max_rpm, const int8_t direction);
 int8_t get_fan_voltage_response(const uint8_t id, uint16_t* v_no_out, uint16_t* dvdout, int16_t* d2vdout2);
-int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const uint16_t dvdout, const int16_t d2vdout2);
+int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const uint16_t dvdout);
 uint8_t get_fan_output(const uint8_t id);
 int8_t set_fan_output(const uint8_t id, const uint8_t output);
 int8_t switch_fan_control(const uint8_t id, const uint8_t mode);
