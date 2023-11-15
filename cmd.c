@@ -4,6 +4,7 @@ void ping_cmd(struct cmd* cmd);
 void reset_cmd(struct cmd* cmd);
 
 void get_fan_rpm_cmd(struct cmd* cmd);
+void get_fan_off_level_cmd(struct cmd* cmd);
 void get_fan_voltage_cmd(struct cmd* cmd);
 void get_fan_voltage_target_cmd(struct cmd* cmd);
 
@@ -282,8 +283,8 @@ const __flash struct input_cmd input_cmds[] = {
     {0,0}, //242
     {0,0}, //243
     {0,0}, //244
-    {0,0}, //245
-    {get_fan_rpm_cmd, 1}, //  246
+    {get_fan_rpm_cmd, 1}, //  245
+    {get_fan_off_level_cmd,1}, //246
     {get_fan_voltage_cmd,1}, //247
     {get_fan_voltage_target_cmd,1}, //248
     {fan_adc_calibration_cmd, 1}, //249
@@ -328,6 +329,15 @@ void get_fan_rpm_cmd(struct cmd* cmd)
   cmd->id=GET_FAN_RPM_CMD_RESP_ID;
   cmd->nbytes=2;
   *((uint16_t*)&cmd->bytes[0])=htobe16(get_fan_rpm(cmd->bytes[0]));
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
+void get_fan_off_level_cmd(struct cmd* cmd)
+{
+  cmd->id=GET_FAN_OFF_LEVEL_CMD_RESP_ID;
+  cmd->nbytes=2;
+  *((int16_t*)&cmd->bytes[0])=(int16_t)htobe16(get_fan_off_level(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -382,7 +392,7 @@ void get_fan_voltage_response_cmd(struct cmd* cmd)
   cmd->id=GET_FAN_VOLTAGE_RESPONSE_CMD_RESP_ID;
   cmd->nbytes=6;
   uint16_t vnoout;
-  uint16_t dvdout;
+  int16_t dvdout;
   int16_t d2vdout2;
   get_fan_voltage_response(cmd->bytes[0], &vnoout, &dvdout, &d2vdout2);
   cmd->bytes[0]=(uint8_t)(vnoout>>8);
@@ -397,7 +407,7 @@ void get_fan_voltage_response_cmd(struct cmd* cmd)
 
 void set_fan_voltage_response_cmd(struct cmd* cmd)
 {
-  int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), be16toh(*(uint16_t*)(cmd->bytes+3)));
+  int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
   ack(cmd->id, ret, cmd);
 }
 

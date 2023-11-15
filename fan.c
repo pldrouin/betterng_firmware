@@ -25,8 +25,9 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output)
   if(id>=N_MAX_FANS) return -1;
 
   if(output>0U) {
-    uint16_t voltage = fans[id].vnoout + output*(uint32_t)fans[id].dvdout/UINT8_MAX + output*(int32_t)fans[id].d2vdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX);
-    fans[id].level = fans[id].off_level - fans[id].off_level*(uint32_t)voltage/FAN_MAX_VOLTAGE_SCALE;
+    fans[id].voltage = (uint16_t)(fans[id].vnoout + ((int32_t)output)*fans[id].dvdout/UINT8_MAX + ((int32_t)output)*fans[id].d2vdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX));
+    fans[id].level = (int16_t)(fans[id].off_level - ((int32_t)fans[id].off_level)*fans[id].voltage/FAN_MAX_VOLTAGE_SCALE);
+    //Assertion: level <= off_level
 
     if(fans[id].mode&FAN_DISABLED_MODE) switch_fan_control(id, fans[id].mode);
 
@@ -123,7 +124,7 @@ int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t m
   return 0;
 }
 
-int8_t get_fan_voltage_response(const uint8_t id, uint16_t* v_no_out, uint16_t* dvdout, int16_t* d2vdout2)
+int8_t get_fan_voltage_response(const uint8_t id, uint16_t* v_no_out, int16_t* dvdout, int16_t* d2vdout2)
 {
   if(id>=N_MAX_FANS) {
     *v_no_out = 0;
@@ -137,7 +138,7 @@ int8_t get_fan_voltage_response(const uint8_t id, uint16_t* v_no_out, uint16_t* 
   return 0;
 }
 
-int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const uint16_t dvdout)
+int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout)
 {
   if(id>=N_MAX_FANS) return -1;
 
@@ -219,16 +220,25 @@ uint16_t get_fan_rpm(const uint8_t id)
   return (rpm==convert_fan_rpm(INT16_MAX)?0:rpm);
 }
 
+int16_t get_fan_off_level(const uint8_t id)
+{
+  if(id>=N_MAX_FANS) return 0;
+  return fans[id].off_level; 
+}
+
 uint16_t get_fan_voltage(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return 0;
-  return (uint16_t)((uint32_t)(fans[id].off_level - adc_getValue(id)) * FAN_MAX_VOLTAGE_SCALE / fans[id].off_level); 
+  int16_t adc_level=adc_getValue(id);
+  return (adc_level < fans[id].off_level?(uint16_t)((uint32_t)(fans[id].off_level - adc_level) * FAN_MAX_VOLTAGE_SCALE / fans[id].off_level):0U); 
 }
 
 uint16_t get_fan_voltage_target(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return 0;
-  return (uint16_t)((uint32_t)(fans[id].off_level - fans[id].level) * FAN_MAX_VOLTAGE_SCALE / fans[id].off_level); 
+  //Assertion: level <= off_level, so voltage is positive
+  //return (uint16_t)((uint32_t)(fans[id].off_level - fans[id].level) * FAN_MAX_VOLTAGE_SCALE / fans[id].off_level); 
+  return fans[id].voltage;
 }
 
 ISR(TIMER2_COMP_vect)
