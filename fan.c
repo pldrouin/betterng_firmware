@@ -124,7 +124,7 @@ int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t m
   return 0;
 }
 
-int8_t get_fan_voltage_response(const uint8_t id, uint16_t* v_no_out, int16_t* dvdout, int16_t* d2vdout2)
+int8_t get_fan_voltage_response(const uint8_t id, uint16_t* const v_no_out, int16_t* const dvdout, int16_t* const d2vdout2)
 {
   if(id>=N_MAX_FANS) {
     *v_no_out = 0;

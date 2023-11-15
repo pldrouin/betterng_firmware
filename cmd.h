@@ -5,6 +5,6 @@
 #include "fan.h"
 #include "cmd_common.h"
 
-int read_cmd(struct cmd* cmd);
+int read_cmd(struct cmd* const cmd);
 
 #endif

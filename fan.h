@@ -76,7 +76,7 @@ void initfans(void);
 int8_t add_fan(const uint8_t id);
 int8_t del_fan(const uint8_t id);
 int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t max_rpm, const int8_t direction);
-int8_t get_fan_voltage_response(const uint8_t id, uint16_t* v_no_out, int16_t* dvdout, int16_t* d2vdout2);
+int8_t get_fan_voltage_response(const uint8_t id, uint16_t* const v_no_out, int16_t* const dvdout, int16_t* const d2vdout2);
 int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout);
 uint8_t get_fan_output(const uint8_t id);
 int8_t set_fan_output(const uint8_t id, const uint8_t output);

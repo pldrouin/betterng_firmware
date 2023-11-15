@@ -1,28 +1,28 @@
 #include "cmd.h"
 
-void ping_cmd(struct cmd* cmd);
-void reset_cmd(struct cmd* cmd);
+void ping_cmd(struct cmd* const cmd);
+void reset_cmd(struct cmd* const cmd);
 
-void get_fan_rpm_cmd(struct cmd* cmd);
-void get_fan_off_level_cmd(struct cmd* cmd);
-void get_fan_voltage_cmd(struct cmd* cmd);
-void get_fan_voltage_target_cmd(struct cmd* cmd);
+void get_fan_rpm_cmd(struct cmd* const cmd);
+void get_fan_off_level_cmd(struct cmd* const cmd);
+void get_fan_voltage_cmd(struct cmd* const cmd);
+void get_fan_voltage_target_cmd(struct cmd* const cmd);
 
-void fan_adc_calibration_cmd(struct cmd* cmd);
-void switch_fan_control_cmd(struct cmd* cmd);
-void get_fan_output_cmd(struct cmd* cmd);
-void set_fan_output_cmd(struct cmd* cmd);
-void get_fan_voltage_response_cmd(struct cmd* cmd);
-void set_fan_voltage_response_cmd(struct cmd* cmd);
-void ack_cmd(struct cmd* cmd);
+void fan_adc_calibration_cmd(struct cmd* const cmd);
+void switch_fan_control_cmd(struct cmd* const cmd);
+void get_fan_output_cmd(struct cmd* const cmd);
+void set_fan_output_cmd(struct cmd* const cmd);
+void get_fan_voltage_response_cmd(struct cmd* const cmd);
+void set_fan_voltage_response_cmd(struct cmd* const cmd);
+void ack_cmd(struct cmd* const cmd);
 
-static inline void send_cmd(const struct cmd* cmd)
+static inline void send_cmd(const struct cmd* const cmd)
 {
   uart_send_bytes((const uint8_t*)cmd, cmd->nbytes+2);
 }
 
 //Outgoing commands 3 bytes
-static inline void ack(const uint8_t id, const int8_t ret, struct cmd* cmd)
+static inline void ack(const uint8_t id, const int8_t ret, struct cmd* const cmd)
 {
   cmd->id=ACK_CMD_ID;
   cmd->nbytes=2;
@@ -299,7 +299,7 @@ const __flash struct input_cmd input_cmds[] = {
 static uint8_t last_ack_cmd=UINT8_MAX;
 static int8_t last_ack_value=INT8_MIN;
 
-int read_cmd(struct cmd* cmd)
+int read_cmd(struct cmd* const cmd)
 {
   if(!uart_receive_byte(&cmd->id)) return 0;
   cmd->nbytes=input_cmds[cmd->id].nbytes;
@@ -313,18 +313,18 @@ int read_cmd(struct cmd* cmd)
   return 0;
 }
 
-void ping_cmd(struct cmd* cmd)
+void ping_cmd(struct cmd* const cmd)
 {
   send_cmd(cmd);
 }
 
-void reset_cmd(struct cmd* cmd)
+void reset_cmd(struct cmd* const cmd)
 {
   send_cmd(cmd);
   while(1);
 }
 
-void get_fan_rpm_cmd(struct cmd* cmd)
+void get_fan_rpm_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_RPM_CMD_RESP_ID;
   cmd->nbytes=2;
@@ -333,7 +333,7 @@ void get_fan_rpm_cmd(struct cmd* cmd)
   send_cmd(cmd);
 }
 
-void get_fan_off_level_cmd(struct cmd* cmd)
+void get_fan_off_level_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_OFF_LEVEL_CMD_RESP_ID;
   cmd->nbytes=2;
@@ -342,7 +342,7 @@ void get_fan_off_level_cmd(struct cmd* cmd)
   send_cmd(cmd);
 }
 
-void get_fan_voltage_cmd(struct cmd* cmd)
+void get_fan_voltage_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_VOLTAGE_CMD_RESP_ID;
   cmd->nbytes=2;
@@ -351,7 +351,7 @@ void get_fan_voltage_cmd(struct cmd* cmd)
   send_cmd(cmd);
 }
 
-void get_fan_voltage_target_cmd(struct cmd* cmd)
+void get_fan_voltage_target_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_VOLTAGE_TARGET_CMD_RESP_ID;
   cmd->nbytes=2;
@@ -360,19 +360,19 @@ void get_fan_voltage_target_cmd(struct cmd* cmd)
   send_cmd(cmd);
 }
 
-void ack_cmd(struct cmd* cmd)
+void ack_cmd(struct cmd* const cmd)
 {
   last_ack_cmd=cmd->bytes[0];
   last_ack_value=(int8_t)cmd->bytes[1];
 }
 
-void switch_fan_control_cmd(struct cmd* cmd)
+void switch_fan_control_cmd(struct cmd* const cmd)
 {
   int8_t ret=switch_fan_control(cmd->bytes[0], cmd->bytes[1]);
   ack(cmd->id, ret, cmd);
 }
 
-void get_fan_output_cmd(struct cmd* cmd)
+void get_fan_output_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_OUTPUT_CMD_RESP_ID;
   cmd->nbytes=1;
@@ -381,13 +381,13 @@ void get_fan_output_cmd(struct cmd* cmd)
   send_cmd(cmd);
 }
 
-void set_fan_output_cmd(struct cmd* cmd)
+void set_fan_output_cmd(struct cmd* const cmd)
 {
   int8_t ret=set_fan_output(cmd->bytes[0], cmd->bytes[1]);
   ack(cmd->id, ret, cmd);
 }
 
-void get_fan_voltage_response_cmd(struct cmd* cmd)
+void get_fan_voltage_response_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_VOLTAGE_RESPONSE_CMD_RESP_ID;
   cmd->nbytes=6;
@@ -405,13 +405,13 @@ void get_fan_voltage_response_cmd(struct cmd* cmd)
   send_cmd(cmd);
 }
 
-void set_fan_voltage_response_cmd(struct cmd* cmd)
+void set_fan_voltage_response_cmd(struct cmd* const cmd)
 {
   int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
   ack(cmd->id, ret, cmd);
 }
 
-void fan_adc_calibration_cmd(struct cmd* cmd)
+void fan_adc_calibration_cmd(struct cmd* const cmd)
 {
   uint8_t ret=fan_adc_calibration(cmd->bytes[0]);
   ack(cmd->id, ret, cmd);
