@@ -12,6 +12,8 @@
 
 //Prescaler to 64, 250kHz @ 16 MHz F_CPU
 #define FAN_PWM_FREQ (22000UL)
+#define FAN_TACH_MEASUREMENT_MAX_TICKS (FAN_PWM_FREQ)
+#define FAN_TACH_NO_TICK_TIMEOUT (2*FAN_PWM_FREQ)
 #define FAN_TIMER_PRESCALE TIMER_FINE_8BIT_PRESCALE(FAN_PWM_FREQ)
 #define FAN_TIMER_ALARM TIMER_FINE_8BIT_ALARM(FAN_PWM_FREQ)
 
@@ -30,7 +32,7 @@
 #define set_fan_pin_as_input(MODE, ID) (cbi(FAN_ ## MODE ## _DDR, FAN_ ## MODE ## _FIRST_NO+ID))
 #define read_fan_pin(MODE, ID) (bit_is_set(FAN_ ## MODE ## _PIN, FAN_ ## MODE ## _FIRST_NO+ID)!=0)
 
-#define convert_fan_rpm(TACH_PWM_TICKS) ((uint16_t)((F_CPU/FAN_TIMER_PRESCALE)*(uint32_t)60/(FAN_TIMER_ALARM+1)/TACH_PWM_TICKS))
+#define convert_fan_rpm(TACH_PWM_TICKS) ((int16_t)((F_CPU/FAN_TIMER_PRESCALE)*(int32_t)30/(FAN_TIMER_ALARM+1)/TACH_PWM_TICKS))
 
 #define FAN_DEFAULT_OUTPUT_VALUE (128U)
 
@@ -39,22 +41,33 @@
 #define calc_d2vdout2(v_no_out, dvdout) ((((int16_t)FAN_MAX_VOLTAGE_SCALE) - v_no_out - dvdout))
 #define FAN_D2VDOUT2_DEFAULT_VALUE (calc_d2vdout2(FAN_VNOOUT_DEFAULT_VALUE,FAN_DVDOUT_DEFAULT_VALUE))
 
+#define FAN_DCNOOUT_DEFAULT_VALUE (FAN_SAFE_WORKING_DUTY_CYCLE*64)
+#define FAN_DDCDOUT_DEFAULT_VALUE ((int16_t)(((uint16_t)UINT8_MAX)*64-FAN_DCNOOUT_DEFAULT_VALUE))
+#define calc_d2dcdout2(dc_no_out, ddcdout) ((((uint16_t)UINT8_MAX)*64 - dc_no_out - ddcdout))
+#define FAN_D2DCDOUT2_DEFAULT_VALUE (calc_d2dcdout2(FAN_DCNOOUT_DEFAULT_VALUE,FAN_DDCDOUT_DEFAULT_VALUE))
+
+enum {FAN_LAST_TACH_UP=1U, FAN_LAST_POWER_UP=2U, FAN_TACH_ACCURATE_RPM=4U};
+
 struct fan
 {
   //uint16_t max_flow;
-  int16_t prev_tach_pwm_ticks;
-  int16_t cur_tach_pwm_ticks; //Negative until tach line turns back low again
+  volatile int16_t prev_tach_pwm_ticks;
+  uint16_t cur_tach_pwm_ticks;
   int16_t off_level; //Measured (maximum) ADC voltage when MOSFET does not conduct (channel specific)
   //uint16_t diff_level;//Measured ADC maximum voltage range
   uint16_t vnoout;     //Voltage when fan stops (units are mV)
   int16_t dvdout;     //Voltage derivative * max output (255) (mV)
   int16_t d2vdout2;    //Second voltage derivative with output * max output * max output (mV)
+  uint16_t dcnoout;    //PWM duty cycle when fan stops * 64
+  int16_t ddcdout;     //PWM duty cycle derivative * max output (255) * 64
+  int16_t d2dcdout2;   //PWM second duty cycle derivative * max output * max output * 64
   int16_t last_temp;
   uint16_t hysterisis;
-  int16_t level; //Calculated target ADC level
+  int16_t level;       //Calculated target ADC level
   uint16_t voltage;
   //int8_t direction;   //1=positive pressure, -1=negative pressure, 0=no pressure
   uint8_t mode;
+  uint8_t duty_cycle;  //Calculated PWM duty cycle
   uint8_t lsenslist[LM75A_MAX_SENSORS];
   uint8_t nlsensors;
   uint8_t asenslist[MAX_ANALOG_SENSORS];
@@ -66,16 +79,18 @@ struct fan
   uint8_t ncurvepoints;
   uint8_t output;
   uint8_t pwm_counter_offset;
+  uint8_t last_fan_status;
+  uint8_t prev_tach_osc;
 };
 
-extern volatile struct fan fans[N_MAX_FANS];
-extern uint8_t fanlist[N_MAX_FANS];
-extern uint8_t nfans;
+extern struct fan fans[N_MAX_FANS];
 
 void initfans(void);
 int8_t add_fan(const uint8_t id);
 int8_t del_fan(const uint8_t id);
 int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t max_rpm, const int8_t direction);
+int8_t get_fan_duty_cycle_response(const uint8_t id, uint16_t* const dc_no_out, int16_t* const ddcdout, int16_t* const d2dcdout2);
+int8_t set_fan_duty_cycle_response(const uint8_t id, const uint16_t dc_no_out, const int16_t ddcdout);
 int8_t get_fan_voltage_response(const uint8_t id, uint16_t* const v_no_out, int16_t* const dvdout, int16_t* const d2vdout2);
 int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout);
 uint8_t get_fan_output(const uint8_t id);
@@ -83,7 +98,7 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output);
 int8_t switch_fan_control(const uint8_t id, const uint8_t mode);
 int8_t fan_adc_calibration(const uint8_t id);
 uint8_t* get_fan_data(const uint8_t id);
-uint16_t get_fan_rpm(const uint8_t id);
+int16_t get_fan_rpm(const uint8_t id);
 int16_t get_fan_off_level(const uint8_t id);
 uint16_t get_fan_voltage(const uint8_t id);
 uint16_t get_fan_voltage_target(const uint8_t id);

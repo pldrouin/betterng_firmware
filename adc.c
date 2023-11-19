@@ -2,7 +2,7 @@
 #include "fan.h"
 
 volatile static int16_t adc_values[ADC_NCHANNELS];
-volatile static uint8_t cur_adc_channel=0;
+static uint8_t cur_adc_channel=0;
 
 void initadc(void)
 {

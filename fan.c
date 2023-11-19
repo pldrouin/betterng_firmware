@@ -1,5 +1,6 @@
 #include "defines.h"
 #include <math.h>
+#include <stdlib.h>
 
 #include "fan.h"
 
@@ -8,11 +9,9 @@
 #define DIFF_LEVEL_DEFAULT_VALUE (OFF_LEVEL_DEFAULT_VALUE)
 #define LAST_TEMP_INVALID_VALUE (INT16_MAX)
 
-volatile struct fan fans[N_MAX_FANS];
-uint8_t fanlist[N_MAX_FANS];
-uint8_t nfans=0U;
-
-volatile static uint8_t pwm_counter=0;
+struct fan fans[N_MAX_FANS];
+static uint8_t fanlist[N_MAX_FANS];
+static uint8_t nfans=0U;
 
 uint8_t get_fan_output(const uint8_t id)
 {
@@ -28,6 +27,8 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output)
     fans[id].voltage = (uint16_t)(fans[id].vnoout + ((int32_t)output)*fans[id].dvdout/UINT8_MAX + ((int32_t)output)*fans[id].d2vdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX));
     fans[id].level = (int16_t)(fans[id].off_level - ((int32_t)fans[id].off_level)*fans[id].voltage/FAN_MAX_VOLTAGE_SCALE);
     //Assertion: level <= off_level
+
+    fans[id].duty_cycle = (uint8_t)((fans[id].dcnoout + ((int32_t)output)*fans[id].ddcdout/UINT8_MAX + ((int32_t)output)*fans[id].d2dcdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX))/64);
 
     if(fans[id].mode&FAN_DISABLED_MODE) switch_fan_control(id, fans[id].mode);
 
@@ -60,13 +61,16 @@ void initfans(void)
     set_fan_pin_as_output(RPM, id);
 
     //fans[id].max_flow=MAX_FLOW_INVALID_VALUE;
-    fans[id].prev_tach_pwm_ticks=0L;
-    fans[id].cur_tach_pwm_ticks=0L;
+    fans[id].prev_tach_pwm_ticks=-INT16_MAX;
+    fans[id].cur_tach_pwm_ticks=1;
     fans[id].off_level=OFF_LEVEL_DEFAULT_VALUE;
     //fans[id].diff_level=DIFF_LEVEL_DEFAULT_VALUE;
     fans[id].vnoout=FAN_VNOOUT_DEFAULT_VALUE;
     fans[id].dvdout=FAN_DVDOUT_DEFAULT_VALUE;
     fans[id].d2vdout2=FAN_D2VDOUT2_DEFAULT_VALUE;
+    fans[id].dcnoout=FAN_DCNOOUT_DEFAULT_VALUE;
+    fans[id].ddcdout=FAN_DDCDOUT_DEFAULT_VALUE;
+    fans[id].d2dcdout2=FAN_D2DCDOUT2_DEFAULT_VALUE;
     //fans[id].direction=0;
     fans[id].mode=FAN_VOLTAGE_MODE;
     fans[id].nlsensors=0U;
@@ -77,6 +81,8 @@ void initfans(void)
     fans[id].ncurvepoints=0U;
     set_fan_output(id, FAN_DEFAULT_OUTPUT_VALUE);
     fans[id].pwm_counter_offset=(uint8_t)(((UINT8_MAX+1.)*id)/N_MAX_FANS);
+    fans[id].last_fan_status=0;
+    fans[id].prev_tach_osc=0;
   }
 
   FAN_OUTPUT_COMPARE_REG = FAN_TIMER_ALARM;
@@ -121,6 +127,30 @@ int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t m
   if(direction!=FAN_POSITIVE_PRESSURE && direction!=FAN_NEGATIVE_PRESSURE && direction!=FAN_NO_PRESSURE) return FAN_INVALID_DIRECTION;
   //fans[id].max_flow=max_flow;
   //fans[id].direction=direction;
+  return 0;
+}
+
+int8_t get_fan_duty_cycle_response(const uint8_t id, uint16_t* const dc_no_out, int16_t* const ddcdout, int16_t* const d2dcdout2)
+{
+  if(id>=N_MAX_FANS) {
+    *dc_no_out = 0;
+    *ddcdout = 0;
+    *d2dcdout2 = 0;
+    return -1;
+  }
+  *dc_no_out = fans[id].dcnoout;
+  *ddcdout = fans[id].ddcdout;
+  *d2dcdout2 = fans[id].d2dcdout2;
+  return 0;
+}
+
+int8_t set_fan_duty_cycle_response(const uint8_t id, const uint16_t dc_no_out, const int16_t ddcdout)
+{
+  if(id>=N_MAX_FANS) return -1;
+
+  fans[id].dcnoout = dc_no_out;
+  fans[id].ddcdout = ddcdout;
+  fans[id].d2dcdout2 = calc_d2dcdout2(dc_no_out, ddcdout);
   return 0;
 }
 
@@ -213,11 +243,11 @@ uint8_t* get_fan_data(const uint8_t id)
   return (uint8_t*)(fans+id);
 }
 
-uint16_t get_fan_rpm(const uint8_t id)
+int16_t get_fan_rpm(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return 0;
   uint16_t rpm = convert_fan_rpm(fans[id].prev_tach_pwm_ticks);
-  return (rpm==convert_fan_rpm(INT16_MAX)?0:rpm);
+  return (abs(rpm)==convert_fan_rpm(INT16_MAX)?0:rpm);
 }
 
 int16_t get_fan_off_level(const uint8_t id)
@@ -243,53 +273,89 @@ uint16_t get_fan_voltage_target(const uint8_t id)
 
 ISR(TIMER2_COMP_vect)
 {
+  static uint8_t pwm_counter=0;
+  bool cur_tach_status;
+
   //Note: In PWM mode, a real tach signal is when the tach line is pulled low. A line
   //turning high following the end of the power pulse should be ignored.
   int8_t index;
   uint8_t id;
 
-  ++pwm_counter;
-
-  for(index=nfans; index>=0; --index) {
+  for(index=nfans-1; index>=0; --index) {
     id=fanlist[index];
-    //toggle_fan_pin(RPM, id);
 
-    //If the tach pin went low during the current cycle
-    if(fans[id].cur_tach_pwm_ticks>0) {
-      ++fans[id].cur_tach_pwm_ticks;
+    //If fan power is active
+    if((fans[id].mode&FAN_PWM_MODE)==0 || read_fan_pin(PWM, id)) {
+      cur_tach_status=(read_fan_pin(TACH, id)>0);
 
-      if(fans[id].cur_tach_pwm_ticks == INT16_MAX) {
-	fans[id].prev_tach_pwm_ticks = INT16_MAX;
-	fans[id].cur_tach_pwm_ticks = 0;
+      //If the tach pin changed since the last time power was active
+      if(((fans[id].last_fan_status&FAN_LAST_TACH_UP)!=0) ^ cur_tach_status) {
+        set_fan_pin(RPM, id, cur_tach_status);
 
-	//If the tach pin just went high
-      } else if(read_fan_pin(TACH, id)!=0) {
-	fans[id].prev_tach_pwm_ticks = fans[id].cur_tach_pwm_ticks;
-	fans[id].cur_tach_pwm_ticks = 0;
-	set_fan_pin(RPM, id, true);
+	//If the power just became active, the tach signal is not accurate
+	if(!(fans[id].last_fan_status&FAN_LAST_POWER_UP)) {
+
+	  //If we can wait for another tach oscillation
+	  if(fans[id].cur_tach_pwm_ticks < FAN_TACH_MEASUREMENT_MAX_TICKS && fans[id].prev_tach_osc<UINT8_MAX) {
+	    ++fans[id].cur_tach_pwm_ticks;
+	    ++fans[id].prev_tach_osc;
+	    fans[id].last_fan_status = ((uint8_t)cur_tach_status) | FAN_LAST_POWER_UP | (fans[id].last_fan_status&FAN_TACH_ACCURATE_RPM);
+
+	    //Else if we cannot wait for another oscillation
+	  } else {
+	    //Corrects the period using the average expected time for the
+	    //tach change
+	    fans[id].prev_tach_pwm_ticks = -(int16_t)((fans[id].cur_tach_pwm_ticks - (UINT8_MAX - fans[id].duty_cycle)/2) / (fans[id].prev_tach_osc + 1));
+	    fans[id].cur_tach_pwm_ticks = 1 + (UINT8_MAX - fans[id].duty_cycle)/2;
+	    fans[id].prev_tach_osc = 0;
+	    fans[id].last_fan_status = ((uint8_t)cur_tach_status) | FAN_LAST_POWER_UP;
+	  }
+
+	  //Else if the power was previously active, then the end of the tach signal is accurate
+	} else {
+
+	  if(fans[id].last_fan_status&FAN_TACH_ACCURATE_RPM) fans[id].prev_tach_pwm_ticks = fans[id].cur_tach_pwm_ticks / (fans[id].prev_tach_osc + 1);
+
+	  else fans[id].prev_tach_pwm_ticks = -(int16_t)(fans[id].cur_tach_pwm_ticks / (fans[id].prev_tach_osc + 1));
+	  fans[id].cur_tach_pwm_ticks = 1;
+	  fans[id].prev_tach_osc = 0;
+	  fans[id].last_fan_status = ((uint8_t)cur_tach_status) | FAN_LAST_POWER_UP | FAN_TACH_ACCURATE_RPM;
+	}
+
+	//Else if the tach pin did not change since the last time power was active
+      } else {
+
+	if(fans[id].cur_tach_pwm_ticks >= FAN_TACH_NO_TICK_TIMEOUT) {
+	  fans[id].prev_tach_pwm_ticks = -INT16_MAX;
+	  fans[id].cur_tach_pwm_ticks = 1;
+	  fans[id].prev_tach_osc = 0;
+
+	} else ++fans[id].cur_tach_pwm_ticks;
+	fans[id].last_fan_status = ((uint8_t)cur_tach_status) | FAN_LAST_POWER_UP;
       }
 
-      //Else if the tach pin has not gone low yet
+      //Else if the fan power is not active
     } else {
-      --fans[id].cur_tach_pwm_ticks;
+      
+      //if((fans[id].cur_tach_pwm_ticks%abs(fans[id].prev_tach_pwm_ticks) == 0)
+      //  toggle_fan_pin(RPM, id);
 
-      //If the tach has not changed state and the counter is overflowing
-      if(fans[id].cur_tach_pwm_ticks == -INT16_MAX) {
-	fans[id].prev_tach_pwm_ticks = INT16_MIN;
-	fans[id].cur_tach_pwm_ticks = 0;
+      if(fans[id].cur_tach_pwm_ticks >= FAN_TACH_NO_TICK_TIMEOUT) {
+	fans[id].prev_tach_pwm_ticks = -INT16_MAX;
+	fans[id].cur_tach_pwm_ticks = 1;
+	fans[id].prev_tach_osc = 0;
+	fans[id].last_fan_status = 0;
 
-	//If the trigger just went low, and not because PWM is active and the
-	//PWM output is low, flip its sign
-      } else if(read_fan_pin(TACH, id)==0 && ((fans[id].mode&FAN_PWM_MODE)==0 || read_fan_pin(PWM, id))) {
-	fans[id].cur_tach_pwm_ticks = -fans[id].cur_tach_pwm_ticks;
-	set_fan_pin(RPM, id, false);
+      } else {
+	++fans[id].cur_tach_pwm_ticks;
+	fans[id].last_fan_status &= ~FAN_LAST_POWER_UP;
       }
     }
 
     //If fan is running in PWM mode
-    if(fans[id].mode&FAN_PWM_MODE) {
+    if(fans[id].mode==FAN_PWM_MODE) {
 
-      if(pwm_counter+fans[id].pwm_counter_offset >= fans[id].output) set_fan_pin(PWM, id, false);
+      if((uint8_t)(++pwm_counter+fans[id].pwm_counter_offset) > fans[id].duty_cycle) set_fan_pin(PWM, id, false);
 
       else set_fan_pin(PWM, id, true);
     }

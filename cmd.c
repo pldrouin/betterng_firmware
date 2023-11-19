@@ -12,6 +12,8 @@ void fan_adc_calibration_cmd(struct cmd* const cmd);
 void switch_fan_control_cmd(struct cmd* const cmd);
 void get_fan_output_cmd(struct cmd* const cmd);
 void set_fan_output_cmd(struct cmd* const cmd);
+void get_fan_duty_cycle_response_cmd(struct cmd* const cmd);
+void set_fan_duty_cycle_response_cmd(struct cmd* const cmd);
 void get_fan_voltage_response_cmd(struct cmd* const cmd);
 void set_fan_voltage_response_cmd(struct cmd* const cmd);
 void ack_cmd(struct cmd* const cmd);
@@ -281,16 +283,16 @@ const __flash struct input_cmd input_cmds[] = {
     {0,0}, //240
     {0,0}, //241
     {0,0}, //242
-    {0,0}, //243
-    {0,0}, //244
-    {get_fan_rpm_cmd, 1}, //  245
-    {get_fan_off_level_cmd,1}, //246
-    {get_fan_voltage_cmd,1}, //247
-    {get_fan_voltage_target_cmd,1}, //248
-    {fan_adc_calibration_cmd, 1}, //249
-    {switch_fan_control_cmd, 2}, //250
-    {get_fan_output_cmd, 1}, //251
-    {set_fan_output_cmd, 2}, //252
+    {get_fan_rpm_cmd, 1}, //  243
+    {get_fan_off_level_cmd,1}, //244
+    {get_fan_voltage_cmd,1}, //245
+    {get_fan_voltage_target_cmd,1}, //246
+    {fan_adc_calibration_cmd, 1}, //247
+    {switch_fan_control_cmd, 2}, //248
+    {get_fan_output_cmd, 1}, //249
+    {set_fan_output_cmd, 2}, //250
+    {get_fan_duty_cycle_response_cmd, 1}, //251
+    {set_fan_duty_cycle_response_cmd, 5}, //252
     {get_fan_voltage_response_cmd, 1}, //253
     {set_fan_voltage_response_cmd, 5}, //254
     {ack_cmd, 2} //255
@@ -320,6 +322,9 @@ void ping_cmd(struct cmd* const cmd)
 
 void reset_cmd(struct cmd* const cmd)
 {
+  cmd->nbytes=1;
+  cmd->bytes[0]=0;
+  calc_check_bytes(cmd);
   send_cmd(cmd);
   while(1);
 }
@@ -328,7 +333,7 @@ void get_fan_rpm_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_RPM_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((uint16_t*)&cmd->bytes[0])=htobe16(get_fan_rpm(cmd->bytes[0]));
+  *((int16_t*)&cmd->bytes[0])=htobe16(get_fan_rpm(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -384,6 +389,30 @@ void get_fan_output_cmd(struct cmd* const cmd)
 void set_fan_output_cmd(struct cmd* const cmd)
 {
   int8_t ret=set_fan_output(cmd->bytes[0], cmd->bytes[1]);
+  ack(cmd->id, ret, cmd);
+}
+
+void get_fan_duty_cycle_response_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_FAN_DUTY_CYCLE_RESPONSE_CMD_RESP_ID;
+  cmd->nbytes=6;
+  uint16_t dcnoout;
+  int16_t ddcdout;
+  int16_t d2dcdout2;
+  get_fan_duty_cycle_response(cmd->bytes[0], &dcnoout, &ddcdout, &d2dcdout2);
+  cmd->bytes[0]=(uint8_t)(dcnoout>>8);
+  cmd->bytes[1]=(uint8_t)dcnoout;
+  cmd->bytes[2]=(uint8_t)(ddcdout>>8);
+  cmd->bytes[3]=(uint8_t)ddcdout;
+  cmd->bytes[4]=(uint8_t)(d2dcdout2>>8);
+  cmd->bytes[5]=(uint8_t)d2dcdout2;
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
+void set_fan_duty_cycle_response_cmd(struct cmd* const cmd)
+{
+  int8_t ret=set_fan_duty_cycle_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
   ack(cmd->id, ret, cmd);
 }
 

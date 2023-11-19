@@ -122,6 +122,13 @@ static inline void watchdogConfig(uint8_t x)
 #define TIMER_INTR_MASK_REG		TIMSK	
 #define TIMER_ENABLE_COMPARE_MATCH_INTR	OCIE1A	
 
+#define MCU_CONTROL_STATUS_REG		MCUCSR
+
+#define GENERAL_INTERRUPT_CONTROL_REG	GICR
+#define ENABLE_INT0_INTR		INT0
+#define ENABLE_INT1_INTR		INT1
+#define ENABLE_INT2_INTR		INT2
+
 /* definitions for UART control */
 #define	BAUD_RATE_LOW_REG	UBRRL
 #define	BAUD_RATE_HIGH_REG	UBRRH
