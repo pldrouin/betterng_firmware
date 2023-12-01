@@ -51,6 +51,8 @@ void initfans(void)
   for(id=0U; id<N_MAX_FANS; ++id) {
     set_fan_pin_as_input(ADC, id);
     set_fan_pin(ADC, id, false);
+    set_fan_pin(PWM, id, false);
+    set_fan_pin_as_input(PWM, id);
     set_fan_pin(DC, id, false);
     set_fan_pin_as_output(DC, id);
 
@@ -283,6 +285,9 @@ ISR(TIMER2_COMP_vect)
 
   for(index=nfans-1; index>=0; --index) {
     id=fanlist[index];
+
+    //if(fans[id].cur_tach_pwm_ticks%abs(fans[id].prev_tach_pwm_ticks) == 0)
+      //toggle_fan_pin(RPM, id);
 
     //If fan power is active
     if((fans[id].mode&FAN_PWM_MODE)==0 || read_fan_pin(PWM, id)) {
