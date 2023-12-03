@@ -11,7 +11,7 @@
 #include "temp_sensors.h"
 
 //Prescaler to 64, 250kHz @ 16 MHz F_CPU
-#define FAN_PWM_FREQ (22000UL)
+#define FAN_PWM_FREQ (20000UL)
 #define FAN_TACH_MEASUREMENT_MAX_TICKS (FAN_PWM_FREQ)
 #define FAN_TACH_NO_TICK_TIMEOUT (2*FAN_PWM_FREQ)
 #define FAN_TIMER_PRESCALE TIMER_FINE_8BIT_PRESCALE(FAN_PWM_FREQ)
@@ -53,6 +53,7 @@ struct fan
   //uint16_t max_flow;
   volatile int16_t prev_tach_pwm_ticks;
   uint16_t cur_tach_pwm_ticks;
+  uint16_t cur_tach_phase;
   int16_t off_level; //Measured (maximum) ADC voltage when MOSFET does not conduct (channel specific)
   //uint16_t diff_level;//Measured ADC maximum voltage range
   uint16_t vnoout;     //Voltage when fan stops (units are mV)
@@ -78,6 +79,8 @@ struct fan
   uint8_t curve_outputs[MAX_CURVE_NPOINTS];
   uint8_t ncurvepoints;
   uint8_t output;
+  uint8_t pwm_to_voltage_output;
+  uint8_t voltage_to_pwm_output;
   uint8_t pwm_counter_offset;
   uint8_t last_fan_status;
   uint8_t prev_tach_osc;
@@ -93,8 +96,11 @@ int8_t get_fan_duty_cycle_response(const uint8_t id, uint16_t* const dc_no_out, 
 int8_t set_fan_duty_cycle_response(const uint8_t id, const uint16_t dc_no_out, const int16_t ddcdout);
 int8_t get_fan_voltage_response(const uint8_t id, uint16_t* const v_no_out, int16_t* const dvdout, int16_t* const d2vdout2);
 int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout);
+int8_t get_fan_mode_transitions(const uint8_t id, uint8_t* const pwm_to_voltage_output, uint8_t* const voltage_to_pwm_output);
+int8_t set_fan_mode_transitions(const uint8_t id, const uint8_t pwm_to_voltage_output, const uint8_t voltage_to_pwm_output);
 uint8_t get_fan_output(const uint8_t id);
 int8_t set_fan_output(const uint8_t id, const uint8_t output);
+int8_t set_fan_output_auto(const uint8_t id, const uint8_t output);
 int8_t switch_fan_control(const uint8_t id, const uint8_t mode);
 int8_t fan_adc_calibration(const uint8_t id);
 uint8_t* get_fan_data(const uint8_t id);
