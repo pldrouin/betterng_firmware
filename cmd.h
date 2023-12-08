@@ -2,6 +2,7 @@
 #define _CMD_
 #include <stdbool.h>
 #include "serial.h"
+#include "temp_sensors.h"
 #include "fan.h"
 #include "cmd_common.h"
 

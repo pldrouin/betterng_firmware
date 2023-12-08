@@ -64,7 +64,8 @@ int main(void)
     //set_fan_voltage_response(3, 3000, (12000-3000)*250/255, 0);
 
     while(1) {
-      read_cmd(&cmd);
+
+      if(!read_cmd(&cmd)) update_fans();
       watchdogReset();
     }
 }

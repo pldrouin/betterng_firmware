@@ -7,7 +7,7 @@
 #define MAX_FLOW_INVALID_VALUE (UINT16_MAX)
 #define OFF_LEVEL_DEFAULT_VALUE (0x016D)
 #define DIFF_LEVEL_DEFAULT_VALUE (OFF_LEVEL_DEFAULT_VALUE)
-#define LAST_TEMP_INVALID_VALUE (INT16_MAX)
+#define LAST_TEMP_INVALID_VALUE (INT8_MAX)
 
 struct fan fans[N_MAX_FANS];
 static uint8_t fanlist[N_MAX_FANS];
@@ -28,9 +28,9 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output)
     fans[id].level = (int16_t)(fans[id].off_level - ((int32_t)fans[id].off_level)*fans[id].voltage/FAN_MAX_VOLTAGE_SCALE);
     //Assertion: level <= off_level
 
-    fans[id].duty_cycle = (uint8_t)((fans[id].dcnoout + ((int32_t)output)*fans[id].ddcdout/UINT8_MAX + ((int32_t)output)*fans[id].d2dcdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX))/64);
+    fans[id].duty_cycle = (uint8_t)((fans[id].dcnoout + ((int32_t)output)*fans[id].ddcdout/UINT8_MAX + ((int32_t)output)*fans[id].d2dcdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX))>>6);
 
-    switch_fan_control(id, fans[id].mode);
+    fans[id].mode &= ~FAN_DISABLED_MODE;
 
   //Completely turn off fan if desired output level is 0
   } else {
@@ -54,12 +54,12 @@ int8_t set_fan_output_auto(const uint8_t id, const uint8_t output)
       fans[id].voltage = (uint16_t)(fans[id].vnoout + ((int32_t)output)*fans[id].dvdout/UINT8_MAX + ((int32_t)output)*fans[id].d2vdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX));
       fans[id].level = (int16_t)(fans[id].off_level - ((int32_t)fans[id].off_level)*fans[id].voltage/FAN_MAX_VOLTAGE_SCALE);
       //Assertion: level <= off_level
-      switch_fan_control(id, FAN_VOLTAGE_MODE);
+      switch_fan_control(id, FAN_VOLTAGE_MODE&~FAN_DISABLED_MODE);
 
     } else {
 
-      fans[id].duty_cycle = (uint8_t)((fans[id].dcnoout + ((int32_t)output)*fans[id].ddcdout/UINT8_MAX + ((int32_t)output)*fans[id].d2dcdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX))/64);
-      switch_fan_control(id, FAN_PWM_MODE);
+      fans[id].duty_cycle = (uint8_t)((fans[id].dcnoout + ((int32_t)output)*fans[id].ddcdout/UINT8_MAX + ((int32_t)output)*fans[id].d2dcdout2*output/(((uint16_t)UINT8_MAX)*UINT8_MAX))>>6);
+      switch_fan_control(id, FAN_PWM_MODE&~FAN_DISABLED_MODE);
     }
 
 
@@ -112,7 +112,9 @@ void initfans(void)
     fans[id].nssensors=0U;
     fans[id].last_temp=LAST_TEMP_INVALID_VALUE;
     fans[id].hysterisis=0U;
-    fans[id].ncurvepoints=0U;
+    fans[id].curve_temps[0]=0;
+    fans[id].curve_outputs[0]=UINT8_MAX;
+    fans[id].ncurvepoints=1U;
     set_fan_output(id, FAN_DEFAULT_OUTPUT_VALUE);
     fans[id].pwm_to_voltage_output=UINT8_MAX;
     fans[id].voltage_to_pwm_output=UINT8_MAX;
@@ -126,6 +128,17 @@ void initfans(void)
   sbi(FAN_TIMER_INTR_MASK_REG, FAN_TIMER_ENABLE_COMPARE_MATCH_INTR);
 }
 
+uint8_t get_fan_list(void)
+{
+  uint8_t ret=0;
+  uint8_t i;
+
+  for(i=0; i<nfans; ++i) {
+    ret|=(1<<fanlist[i]);
+  }
+  return ret;
+}
+
 int8_t add_fan(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return -1;
@@ -136,7 +149,7 @@ int8_t add_fan(const uint8_t id)
 
   fanlist[nfans]=id;
   ++nfans;
-  return 0;
+  return 1;
 }
 
 int8_t del_fan(const uint8_t id)
@@ -150,19 +163,185 @@ int8_t del_fan(const uint8_t id)
   if(i==nfans) return -1;
   --nfans;
 
-  for(; i<nfans; ++i) fanlist[i]=fanlist[i+1];
+  memmove(fanlist+i, fanlist+i+1, nfans);
   return 0;
 }
 
-int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t max_rpm, const int8_t direction)
+uint8_t get_fan_lm75a_temp_sensor_list(const uint8_t fan_id)
 {
-  if(id>=N_MAX_FANS) return -1;
+  uint8_t ret=0;
+  uint8_t i;
+  struct fan* fan=fans+fan_id;
 
-  if(max_rpm>16666) return FAN_INVALID_MAX_RPM;
+  for(i=0; i<fan->nlsensors; ++i) {
+    ret|=(1<<fan->lsenslist[i]);
+  }
+  return ret;
+}
 
-  if(direction!=FAN_POSITIVE_PRESSURE && direction!=FAN_NEGATIVE_PRESSURE && direction!=FAN_NO_PRESSURE) return FAN_INVALID_DIRECTION;
-  //fans[id].max_flow=max_flow;
-  //fans[id].direction=direction;
+uint8_t get_fan_analog_temp_sensor_list(const uint8_t fan_id)
+{
+  uint8_t ret=0;
+  uint8_t i;
+  struct fan* fan=fans+fan_id;
+
+  for(i=0; i<fan->nasensors; ++i) {
+    ret|=(1<<fan->asenslist[i]);
+  }
+  return ret;
+}
+
+uint8_t get_fan_soft_temp_sensor_list(const uint8_t fan_id)
+{
+  uint8_t ret=0;
+  uint8_t i;
+  struct fan* fan=fans+fan_id;
+
+  for(i=0; i<fan->nssensors; ++i) {
+    ret|=(1<<fan->ssenslist[i]);
+  }
+  return ret;
+}
+
+
+int8_t add_fan_lm75a_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+
+  if(sens_id>=LM75A_MAX_SENSORS) return -2;
+  int8_t i;
+  struct fan* fan=fans+fan_id;
+
+  for(i=fan->nlsensors-1; i>=0; --i) if(fan->lsenslist[i]==sens_id) return 0;
+  fan->lsenslist[fan->nlsensors]=sens_id;
+  ++(fan->nlsensors);
+  return 1;
+}
+
+int8_t add_fan_analog_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+
+  if(sens_id>=MAX_ANALOG_SENSORS) return -2;
+  int8_t i;
+  struct fan* fan=fans+fan_id;
+
+  for(i=fan->nasensors-1; i>=0; --i) if(fan->asenslist[i]==sens_id) return 0;
+  fan->asenslist[fan->nasensors]=sens_id;
+  ++(fan->nasensors);
+  return 1;
+}
+
+int8_t add_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+
+  if(sens_id>=N_MAX_SOFT_TEMP_SENSORS) return -2;
+  int8_t i;
+  struct fan* fan=fans+fan_id;
+
+  for(i=fan->nssensors-1; i>=0; --i) if(fan->ssenslist[i]==sens_id) return 0;
+  fan->ssenslist[fan->nssensors]=sens_id;
+  ++(fan->nssensors);
+  return 1;
+}
+
+int8_t del_fan_lm75a_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+  int8_t i;
+  struct fan* fan=fans+fan_id;
+
+  for(i=fan->nlsensors-1; i>=0; --i) if(fan->lsenslist[i]==sens_id) break;
+
+  if(i==-1) return -1;
+  --(fan->nlsensors);
+
+  memmove(fan->lsenslist+i, fan->lsenslist+i+1, fan->nlsensors);
+  return 0;
+}
+
+int8_t del_fan_analog_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+  int8_t i;
+  struct fan* fan=fans+fan_id;
+
+  for(i=fan->nasensors-1; i>=0; --i) if(fan->asenslist[i]==sens_id) break;
+
+  if(i==-1) return -1;
+  --(fan->nasensors);
+
+  memmove(fan->asenslist+i, fan->asenslist+i+1, fan->nasensors);
+  return 0;
+}
+
+int8_t del_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+  int8_t i;
+  struct fan* fan=fans+fan_id;
+
+  for(i=fan->nssensors-1; i>=0; --i) if(fan->ssenslist[i]==sens_id) break;
+
+  if(i==-1) return -1;
+  --(fan->nssensors);
+
+  memmove(fan->ssenslist+i, fan->ssenslist+i+1, fan->nssensors);
+  return 0;
+}
+
+int8_t add_fan_curve_point(const uint8_t fan_id, const int8_t temp, const uint8_t output)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+  struct fan* fan=fans+fan_id;
+
+  if(fan->ncurvepoints==MAX_CURVE_NPOINTS) return -2;
+  uint8_t i=binary_search(temp, fan->curve_temps, fan->ncurvepoints);
+
+  if(fan->curve_temps[i]==temp) {
+    fan->curve_outputs[i]=output;
+    return 0;
+  }
+  ++(fan->ncurvepoints);
+  memmove(fan->curve_temps+i+1, fan->curve_temps+i, fan->ncurvepoints-i);
+  memmove(fan->curve_outputs+i+1, fan->curve_outputs+i, fan->ncurvepoints-i);
+  fan->curve_temps[i]=temp;
+  fan->curve_outputs[i]=output;
+  return 1;
+}
+
+int8_t del_fan_curve_point(const uint8_t fan_id, const uint8_t index)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+  struct fan* fan=fans+fan_id;
+
+  if(index>=fan->ncurvepoints) return -2;
+
+  if(fan->ncurvepoints==1) {
+    fan->curve_outputs[0]=UINT8_MAX;
+    return 0;
+  }
+  --(fan->ncurvepoints);
+  memmove(fan->curve_temps+index, fan->curve_temps+index+1, fan->ncurvepoints);
+  memmove(fan->curve_outputs+index, fan->curve_outputs+index+1, fan->ncurvepoints);
+  return 0;
+}
+
+int8_t get_fan_n_curve_points(const uint8_t fan_id)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+  return fans[fan_id].ncurvepoints;
+}
+
+int8_t get_fan_curve_point(const uint8_t fan_id, const uint8_t index, int8_t* const temp, uint8_t* const output)
+{
+  if(fan_id>=N_MAX_FANS) return -1;
+  struct fan* fan=fans+fan_id;
+
+  if(index>=fan->ncurvepoints) return -2;
+  *temp=fan->curve_temps[index];
+  *output=fan->curve_outputs[index];
   return 0;
 }
 
@@ -233,13 +412,13 @@ int8_t set_fan_mode_transitions(const uint8_t id, const uint8_t pwm_to_voltage_o
 int8_t switch_fan_control(const uint8_t id, uint8_t mode)
 {
   if(id>=N_MAX_FANS) return -1;
-  mode&=FAN_MODE_MASK;
 
   if(mode != fans[id].mode) {
     fans[id].mode=mode;
 
-    switch(mode) {
+    switch(mode&FAN_MODE_MASK) {
       case FAN_VOLTAGE_MODE:
+	set_fan_pin(DC, id, false);
 	set_fan_pin_as_input(PWM, id);
 	set_fan_pin(PWM, id, false);
 	break;
@@ -247,9 +426,10 @@ int8_t switch_fan_control(const uint8_t id, uint8_t mode)
       case FAN_PWM_MODE:
 	set_fan_pin(DC, id, false);
 	set_fan_pin_as_output(PWM, id);
+	set_fan_pin(PWM, id, false);
 	break;
 
-      case FAN_MANUAL_MODE:
+      case FAN_CUSTOM_MODE:
 	set_fan_pin(DC, id, false);
 	set_fan_pin_as_output(PWM, id);
 	set_fan_pin(PWM, id, false);
@@ -270,7 +450,7 @@ int8_t fan_adc_calibration(const uint8_t id)
   int8_t i;
   //uint16_t on_level;
 
-  switch_fan_control(id, FAN_MANUAL_MODE);
+  switch_fan_control(id, FAN_CUSTOM_MODE);
   for(i=99; i>=0; --i) {
     idle_timer_delay_millis(100);
     watchdogReset();
@@ -415,11 +595,74 @@ ISR(TIMER2_COMP_vect)
     }
 
     //If fan is running in PWM mode
-    if(fan->mode==FAN_PWM_MODE) {
+    if((fan->mode&FAN_MODE_MASK) == FAN_PWM_MODE) {
 
       if((uint8_t)(++pwm_counter+fan->pwm_counter_offset) > fan->duty_cycle) set_fan_pin(PWM, id, false);
 
       else set_fan_pin(PWM, id, true);
+    }
+  }
+}
+
+void update_fans(void)
+{
+  int8_t index;
+  uint8_t id;
+  uint8_t s;
+  struct fan* fan;
+  int8_t temp, maxtemp=0;
+  update_temp_values();
+
+  for(index=nfans-1; index>=0; --index) {
+    id=fanlist[index];
+    fan=fans+id;
+
+    if((fan->mode&FAN_AUTO_MODE) != 0) {
+
+      for(s=fan->nlsensors-1; s>=0; --s) {
+	temp = (lsensors[fan->lsenslist[s]].value>>8);
+
+	if(temp > maxtemp) maxtemp=temp;
+      }
+
+      for(s=fan->nasensors-1; s>=0; --s) {
+	temp = (asensors[fan->asenslist[s]].value>>8);
+
+	if(temp > maxtemp) maxtemp=temp;
+      }
+
+      for(s=fan->nssensors-1; s>=0; --s) {
+	temp = (ssensors[fan->ssenslist[s]].value>>8);
+
+	if(temp > maxtemp) maxtemp=temp;
+      }
+
+      if(abs(temp - fan->last_temp) > fan->hysterisis) {
+	fan->last_temp = temp;
+
+	if(temp >= fan->curve_temps[fan->ncurvepoints-1]) set_fan_output_auto(id, fan->curve_outputs[fan->ncurvepoints-1]); 
+
+	else if(temp <= fan->curve_temps[0]) set_fan_output_auto(id, fan->curve_outputs[0]);
+	
+	else {
+	  uint8_t ret=1;
+	  uint8_t diff=fan->ncurvepoints-2;
+	  uint8_t mid;
+	  uint8_t hdiff;
+
+	  while(diff>0) {
+	    hdiff=diff>>1;
+	    mid=ret+hdiff;
+
+	    if(temp>=fan->curve_temps[mid]) {
+	      ret=++mid;
+	      diff-=hdiff+1;
+
+	    } else diff=hdiff;
+	  }
+	  set_fan_output_auto(id, (uint8_t)(fan->curve_outputs[ret-1]+((int16_t)fan->curve_outputs[ret]-fan->curve_outputs[ret-1])*(temp-fan->curve_temps[ret-1])/(fan->curve_temps[ret]-fan->curve_temps[ret-1])));
+	}
+      }
     }
   }
 }

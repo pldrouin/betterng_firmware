@@ -1,6 +1,7 @@
 #ifndef _FAN_
 #define _FAN_
 
+#include<string.h>
 #include<stdint.h>
 #include<avr/io.h>
 
@@ -9,6 +10,7 @@
 #include "timer.h"
 #include "adc.h"
 #include "temp_sensors.h"
+#include "binary_search.h"
 
 //Prescaler to 64, 250kHz @ 16 MHz F_CPU
 #define FAN_PWM_FREQ (20000UL)
@@ -62,11 +64,11 @@ struct fan
   uint16_t dcnoout;    //PWM duty cycle when fan stops * 64
   int16_t ddcdout;     //PWM duty cycle derivative * max output (255) * 64
   int16_t d2dcdout2;   //PWM second duty cycle derivative * max output * max output * 64
-  int16_t last_temp;
-  uint16_t hysterisis;
   int16_t level;       //Calculated target ADC level
   uint16_t voltage;
   //int8_t direction;   //1=positive pressure, -1=negative pressure, 0=no pressure
+  int8_t last_temp;
+  uint8_t hysterisis;
   uint8_t mode;
   uint8_t duty_cycle;  //Calculated PWM duty cycle
   uint8_t lsenslist[LM75A_MAX_SENSORS];
@@ -89,9 +91,22 @@ struct fan
 extern struct fan fans[N_MAX_FANS];
 
 void initfans(void);
+uint8_t get_fan_list(void);
 int8_t add_fan(const uint8_t id);
 int8_t del_fan(const uint8_t id);
-int8_t set_fan_specs(const uint8_t id, const uint16_t max_flow, const uint16_t max_rpm, const int8_t direction);
+uint8_t get_fan_lm75a_temp_sensor_list(const uint8_t fan_id);
+uint8_t get_fan_analog_temp_sensor_list(const uint8_t fan_id);
+uint8_t get_fan_soft_temp_sensor_list(const uint8_t fan_id);
+int8_t add_fan_lm75a_temp_sensor(const uint8_t fan_id, const uint8_t sens_id);
+int8_t add_fan_analog_temp_sensor(const uint8_t fan_id, const uint8_t sens_id);
+int8_t add_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_t sens_id);
+int8_t del_fan_lm75a_temp_sensor(const uint8_t fan_id, const uint8_t sens_id);
+int8_t del_fan_analog_temp_sensor(const uint8_t fan_id, const uint8_t sens_id);
+int8_t del_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_t sens_id);
+int8_t add_fan_curve_point(const uint8_t fan_id, const int8_t temp, const uint8_t output);
+int8_t del_fan_curve_point(const uint8_t fan_id, const uint8_t index);
+int8_t get_fan_n_curve_points(const uint8_t fan_id);
+int8_t get_fan_curve_point(const uint8_t fan_id, const uint8_t index, int8_t* const temp, uint8_t* const output);
 int8_t get_fan_duty_cycle_response(const uint8_t id, uint16_t* const dc_no_out, int16_t* const ddcdout, int16_t* const d2dcdout2);
 int8_t set_fan_duty_cycle_response(const uint8_t id, const uint16_t dc_no_out, const int16_t ddcdout);
 int8_t get_fan_voltage_response(const uint8_t id, uint16_t* const v_no_out, int16_t* const dvdout, int16_t* const d2vdout2);
@@ -108,5 +123,6 @@ int16_t get_fan_rpm(const uint8_t id);
 int16_t get_fan_off_level(const uint8_t id);
 uint16_t get_fan_voltage(const uint8_t id);
 uint16_t get_fan_voltage_target(const uint8_t id);
+void update_fans(void);
 
 #endif
