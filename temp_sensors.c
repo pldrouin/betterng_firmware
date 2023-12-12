@@ -36,7 +36,7 @@ static inline int8_t add_temp_sensor(const uint8_t id, const uint8_t nmaxids, st
   allsensors[*nsens].a1=(1<<14);
   allsensors[*nsens].a0=0;
   ++*nsens;
-  return 1;
+  return 0;
 }
 
 static inline int8_t del_temp_sensor(const uint8_t id, const uint8_t nmaxids, struct temp_sensor* const allsensors, uint8_t* const senslist, uint8_t* const nsens)

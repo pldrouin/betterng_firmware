@@ -149,7 +149,7 @@ int8_t add_fan(const uint8_t id)
 
   fanlist[nfans]=id;
   ++nfans;
-  return 1;
+  return 0;
 }
 
 int8_t del_fan(const uint8_t id)
@@ -215,7 +215,7 @@ int8_t add_fan_lm75a_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
   for(i=fan->nlsensors-1; i>=0; --i) if(fan->lsenslist[i]==sens_id) return 0;
   fan->lsenslist[fan->nlsensors]=sens_id;
   ++(fan->nlsensors);
-  return 1;
+  return 0;
 }
 
 int8_t add_fan_analog_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
@@ -229,7 +229,7 @@ int8_t add_fan_analog_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
   for(i=fan->nasensors-1; i>=0; --i) if(fan->asenslist[i]==sens_id) return 0;
   fan->asenslist[fan->nasensors]=sens_id;
   ++(fan->nasensors);
-  return 1;
+  return 0;
 }
 
 int8_t add_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
@@ -243,7 +243,7 @@ int8_t add_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
   for(i=fan->nssensors-1; i>=0; --i) if(fan->ssenslist[i]==sens_id) return 0;
   fan->ssenslist[fan->nssensors]=sens_id;
   ++(fan->nssensors);
-  return 1;
+  return 0;
 }
 
 int8_t del_fan_lm75a_temp_sensor(const uint8_t fan_id, const uint8_t sens_id)
@@ -308,7 +308,7 @@ int8_t add_fan_curve_point(const uint8_t fan_id, const int8_t temp, const uint8_
   memmove(fan->curve_outputs+i+1, fan->curve_outputs+i, fan->ncurvepoints-i);
   fan->curve_temps[i]=temp;
   fan->curve_outputs[i]=output;
-  return 1;
+  return 0;
 }
 
 int8_t del_fan_curve_point(const uint8_t fan_id, const uint8_t index)
