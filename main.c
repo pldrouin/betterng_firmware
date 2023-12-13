@@ -55,7 +55,7 @@ int main(void)
 
     struct cmd cmd;
 
-    for(i=0; i<N_MAX_FANS; ++i) add_fan(i);
+    //for(i=0; i<N_MAX_FANS; ++i) add_fan(i);
     watchdogReset();
 
     //set_fan_voltage_response(0, 3., (12.-3.)/255, 0);

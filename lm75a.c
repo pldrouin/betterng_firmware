@@ -21,9 +21,9 @@ bool lm75a_read16bitRegister(const uint8_t address, uint16_t* response)
 int16_t lm75a_getValue(const uint8_t id)
 {
   //Returned value is the temperature in Celsius * 256
-  int16_t value;
+  uint16_t value;
 
-  if(id>=LM75A_MAX_SENSORS || !lm75a_read16bitRegister(LM75A_DEFAULT_ADDRESS+id, (uint16_t*)&value)) return LM75A_INVALID_VALUE;
+  if(id>=LM75A_MAX_SENSORS || !lm75a_read16bitRegister(LM75A_DEFAULT_ADDRESS+id, &value)) return LM75A_INVALID_VALUE;
 
-  return be16toh(value)/128;
+  return (int16_t)be16toh(value);
 }

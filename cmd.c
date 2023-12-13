@@ -434,7 +434,7 @@ void get_lm75a_sensor_value_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_LM75A_SENSOR_VALUE_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((int16_t*)&cmd->bytes[0])=htobe16(get_lm75a_sensor_value(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_lm75a_sensor_value(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -443,7 +443,7 @@ void get_analog_sensor_value_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_ANALOG_SENSOR_VALUE_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((int16_t*)&cmd->bytes[0])=htobe16(get_analog_sensor_value(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_analog_sensor_value(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -452,7 +452,7 @@ void get_soft_sensor_value_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_SOFT_SENSOR_VALUE_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((int16_t*)&cmd->bytes[0])=htobe16(get_soft_sensor_value(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_soft_sensor_value(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -464,9 +464,9 @@ void get_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd)
   int16_t a0, a1, a2;
   cmd->bytes[6]=get_lm75a_temp_sensor_calib(cmd->bytes[0], &a0, &a1, &a2);
 
-  *((int16_t*)&cmd->bytes[0])=htobe16(a0);
-  *((int16_t*)&cmd->bytes[2])=htobe16(a1);
-  *((int16_t*)&cmd->bytes[4])=htobe16(a2);
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)a0);
+  *((uint16_t*)&cmd->bytes[2])=htobe16((uint16_t)a1);
+  *((uint16_t*)&cmd->bytes[4])=htobe16((uint16_t)a2);
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -478,9 +478,9 @@ void get_analog_temp_sensor_calib_cmd(struct cmd* const cmd)
   int16_t a0, a1, a2;
   cmd->bytes[6]=get_analog_temp_sensor_calib(cmd->bytes[0], &a0, &a1, &a2);
 
-  *((int16_t*)&cmd->bytes[0])=htobe16(a0);
-  *((int16_t*)&cmd->bytes[2])=htobe16(a1);
-  *((int16_t*)&cmd->bytes[4])=htobe16(a2);
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)a0);
+  *((uint16_t*)&cmd->bytes[2])=htobe16((uint16_t)a1);
+  *((uint16_t*)&cmd->bytes[4])=htobe16((uint16_t)a2);
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -626,7 +626,7 @@ void get_fan_rpm_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_RPM_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((int16_t*)&cmd->bytes[0])=htobe16(get_fan_rpm(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_fan_rpm(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -635,7 +635,7 @@ void get_fan_off_level_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_OFF_LEVEL_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((int16_t*)&cmd->bytes[0])=(int16_t)htobe16(get_fan_off_level(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_fan_off_level(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }

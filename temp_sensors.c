@@ -31,10 +31,10 @@ static inline int8_t add_temp_sensor(const uint8_t id, const uint8_t nmaxids, st
     if(senslist[i]==id) return 0;
 
   senslist[*nsens]=id;
-  allsensors[*nsens].value=TEMP_SENSOR_INVALID_VALUE;
-  allsensors[*nsens].a2=0;
-  allsensors[*nsens].a1=(1<<14);
-  allsensors[*nsens].a0=0;
+  allsensors[id].value=TEMP_SENSOR_INVALID_VALUE;
+  allsensors[id].a2=0;
+  allsensors[id].a1=(1<<14);
+  allsensors[id].a0=0;
   ++*nsens;
   return 0;
 }
