@@ -365,7 +365,7 @@ static inline void update_fans(void)
 
     for(index=N_MAX_FANS-1; index>=0; --index) switch_fan_control(index, FAN_DISABLED_MODE);
     device_overtemp_cmd();
-    buzz_alarm();
+    request_buzz_alarm();
     return;
   }
 
@@ -381,7 +381,7 @@ static inline void update_fans(void)
 
     if(fan->prev_tach_pwm_ticks==-INT16_MAX) {
       switch_fan_control(id, FAN_DISABLED_MODE);
-      buzz_alarm();
+      request_buzz_alarm();
 
     } else if((fan->mode&FAN_STARTING_FLAG) && fan->prev_tach_pwm_ticks!=INT16_MAX) {
       switch_fan_control(id, fan->mode&(~FAN_STARTING_FLAG));

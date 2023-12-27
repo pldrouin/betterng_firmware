@@ -22,7 +22,6 @@ struct cmd{
 
 //Host commands
 #define EEPROM_SAVE_CMD_REQ_ID (2) // 1 bytes
-#define SILENCE_ALARM_CMD_REQ_ID (3) // 1 bytes
 #define ADD_LM75A_TEMP_SENSOR_CMD_REQ_ID (212) // 2 bytes
 #define DEL_LM75A_TEMP_SENSOR_CMD_REQ_ID (213) // 2 bytes
 #define GET_LM75A_TEMP_SENSOR_LIST_CMD_REQ_ID (214) // 1 bytes

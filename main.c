@@ -70,8 +70,10 @@ int main(void)
     //set_fan_voltage_response(3, 3000, (12000-3000)*250/255, 0);
 
     while(1) {
+      reset_buzz_alarm();
 
       if(!read_cmd(&cmd)) update_fans();
+      update_buzz_alarm();
       watchdogReset();
     }
 }

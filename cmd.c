@@ -9,7 +9,6 @@ void ping_cmd(struct cmd* const cmd);
 void reset_cmd(struct cmd* const cmd);
 
 void eeprom_save_cmd(struct cmd* const cmd);
-void silence_alarm_cmd(struct cmd* const cmd);
 
 void add_lm75a_temp_sensor_cmd(struct cmd* const cmd);
 void del_lm75a_temp_sensor_cmd(struct cmd* const cmd);
@@ -79,7 +78,7 @@ const __flash struct input_cmd input_cmds[] = {
     {ping_cmd, 0}, //  0
     {reset_cmd,0}, //  1
     {eeprom_save_cmd,0}, //2
-    {silence_alarm_cmd,0}, //  3
+    {0,0}, //  3
     {0,0}, //  4
     {0,0}, //  5
     {0,0}, //  6
@@ -369,12 +368,6 @@ void eeprom_save_cmd(struct cmd* const cmd)
 {
   int8_t ret=eeprom_save();
   ack(cmd->id, ret, cmd);
-}
-
-void silence_alarm_cmd(struct cmd* const cmd)
-{
-  silence_alarm();
-  ack(cmd->id, 0, cmd);
 }
 
 void add_lm75a_temp_sensor_cmd(struct cmd* const cmd)
