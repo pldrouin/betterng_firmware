@@ -325,9 +325,9 @@ const __flash struct input_cmd input_cmds[] = {
     {set_fan_output_cmd, 2}, //247
     {set_fan_output_auto_cmd, 2}, //248
     {get_fan_duty_cycle_response_cmd, 1}, //249
-    {set_fan_duty_cycle_response_cmd, 5}, //250
+    {set_fan_duty_cycle_response_cmd, 7}, //250
     {get_fan_voltage_response_cmd, 1}, //251
-    {set_fan_voltage_response_cmd, 5}, //252
+    {set_fan_voltage_response_cmd, 7}, //252
     {get_fan_mode_transitions_cmd, 1}, //253
     {set_fan_mode_transitions_cmd, 3}, //254
     {ack_cmd, 2} //255
@@ -693,7 +693,7 @@ void get_fan_duty_cycle_response_cmd(struct cmd* const cmd)
 
 void set_fan_duty_cycle_response_cmd(struct cmd* const cmd)
 {
-  int8_t ret=set_fan_duty_cycle_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
+  int8_t ret=set_fan_duty_cycle_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+5)));
   ack(cmd->id, ret, cmd);
 }
 
@@ -717,7 +717,7 @@ void get_fan_voltage_response_cmd(struct cmd* const cmd)
 
 void set_fan_voltage_response_cmd(struct cmd* const cmd)
 {
-  int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
+  int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
   ack(cmd->id, ret, cmd);
 }
 

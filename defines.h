@@ -228,6 +228,7 @@ static inline void watchdogConfig(uint8_t x)
 #define UART_TIMEOUT_N_BYTE_DURATIONS (2)
 
 #define N_MAX_FANS		4U
+#define FAN_PWM_COUNTER_OFFSET (256/N_MAX_FANS)
 
 #define FAN_ADC_DDR	DDRA
 #define FAN_ADC_PORT	PORTA

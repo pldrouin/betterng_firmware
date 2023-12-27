@@ -31,7 +31,7 @@ static inline void initfan_data(void)
     set_fan_output(id, FAN_DEFAULT_OUTPUT_VALUE);
     fan->pwm_to_voltage_output=UINT8_MAX;
     fan->voltage_to_pwm_output=UINT8_MAX;
-    fan->pwm_counter_offset=(uint8_t)(((UINT8_MAX+1.)*id)/N_MAX_FANS);
+    fan->pwm_counter_offset=(uint8_t)(FAN_PWM_COUNTER_OFFSET*id);
     fan->last_fan_status=0;
     fan->prev_tach_osc=0;
   }
@@ -282,13 +282,13 @@ static inline int8_t get_fan_duty_cycle_response(const uint8_t id, uint16_t* con
   return 0;
 }
 
-static inline int8_t set_fan_duty_cycle_response(const uint8_t id, const uint16_t dc_no_out, const int16_t ddcdout)
+static inline int8_t set_fan_duty_cycle_response(const uint8_t id, const uint16_t dc_no_out, const int16_t ddcdout, const int16_t d2dcdout2)
 {
   if(id>=N_MAX_FANS) return -1;
 
+  fans[id].dcnoout = dc_no_out;
   fans[id].ddcdout = ddcdout;
-  fans[id].d2dcdout2 = calc_d2dcdout2(dc_no_out, ddcdout);
-  fans[id].dcnoout = calc_dcnoout(ddcdout, fans[id].d2dcdout2);
+  fans[id].d2dcdout2 = d2dcdout2;
   return 0;
 }
 
@@ -306,13 +306,13 @@ static inline int8_t get_fan_voltage_response(const uint8_t id, uint16_t* const 
   return 0;
 }
 
-static inline int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout)
+static inline int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout, const int16_t d2vdout2)
 {
   if(id>=N_MAX_FANS) return -1;
 
   fans[id].vnoout = v_no_out;
   fans[id].dvdout = dvdout;
-  fans[id].d2vdout2 = calc_d2vdout2(v_no_out, dvdout);
+  fans[id].d2vdout2 = d2vdout2;
   return 0;
 }
 

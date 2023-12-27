@@ -42,13 +42,10 @@
 
 #define FAN_VNOOUT_DEFAULT_VALUE (FAN_SAFE_WORKING_VOLTAGE)
 #define FAN_DVDOUT_DEFAULT_VALUE (((int16_t)ceil((FAN_MAX_VOLTAGE_SCALE - FAN_SAFE_WORKING_VOLTAGE)*(256./UINT8_MAX))))
-#define calc_d2vdout2(v_no_out, dvdout) (((int16_t)ceil((FAN_MAX_VOLTAGE_SCALE - v_no_out - (int16_t)((((int32_t)dvdout)*UINT8_MAX)>>8))*(65536./65025))))
 #define FAN_D2VDOUT2_DEFAULT_VALUE (0)
 
 #define FAN_DCNOOUT_DEFAULT_VALUE (FAN_SAFE_WORKING_DUTY_CYCLE*64)
 #define FAN_DDCDOUT_DEFAULT_VALUE (((int16_t)ceil((((uint16_t)UINT8_MAX)*64 - FAN_DCNOOUT_DEFAULT_VALUE)*(256./UINT8_MAX))))
-#define calc_d2dcdout2(dc_no_out, ddcdout) (((int16_t)ceil((((uint16_t)UINT8_MAX)*64 - dc_no_out - (int16_t)((((int32_t)ddcdout)*UINT8_MAX)>>8))*(65536./65025))))
-#define calc_dcnoout(ddcdout, d2dcdout2) (((int16_t)(((uint16_t)UINT8_MAX)*64 - (int16_t)((((int32_t)ddcdout)*UINT8_MAX)>>8) - (int16_t)((((int32_t)UINT8_MAX)*d2dcdout2*UINT8_MAX)>>16))))
 #define FAN_D2DCDOUT2_DEFAULT_VALUE (0)
 
 enum {FAN_LAST_TACH_UP=1U, FAN_LAST_POWER_UP=2U, FAN_TACH_ACCURATE_RPM=4U};
@@ -113,9 +110,9 @@ extern uint8_t nfans;
 //static inline int8_t get_fan_n_curve_points(const uint8_t fan_id);
 //static inline int8_t get_fan_curve_point(const uint8_t fan_id, const uint8_t index, int8_t* const temp, uint8_t* const output);
 //static inline int8_t get_fan_duty_cycle_response(const uint8_t id, uint16_t* const dc_no_out, int16_t* const ddcdout, int16_t* const d2dcdout2);
-//static inline int8_t set_fan_duty_cycle_response(const uint8_t id, const uint16_t dc_no_out, const int16_t ddcdout);
+//static inline int8_t set_fan_duty_cycle_response(const uint8_t id, const uint16_t dc_no_out, const int16_t ddcdout, const int16_t d2dcdout2);
 //static inline int8_t get_fan_voltage_response(const uint8_t id, uint16_t* const v_no_out, int16_t* const dvdout, int16_t* const d2vdout2);
-//static inline int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout);
+//static inline int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout, const int16_t d2vdout2);
 //static inline int8_t get_fan_mode_transitions(const uint8_t id, uint8_t* const pwm_to_voltage_output, uint8_t* const voltage_to_pwm_output);
 //static inline int8_t set_fan_mode_transitions(const uint8_t id, const uint8_t pwm_to_voltage_output, const uint8_t voltage_to_pwm_output);
 //static inline uint8_t get_fan_adc_value(const uint8_t id);

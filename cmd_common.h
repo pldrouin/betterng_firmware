@@ -62,9 +62,9 @@ struct cmd{
 #define SET_FAN_OUTPUT_CMD_REQ_ID (247) //3 bytes
 #define SET_FAN_OUTPUT_AUTO_CMD_REQ_ID (248) //3 bytes
 #define GET_FAN_DUTY_CYCLE_RESPONSE_CMD_REQ_ID (249) //2 bytes
-#define SET_FAN_DUTY_CYCLE_RESPONSE_CMD_REQ_ID (250) //6 bytes
+#define SET_FAN_DUTY_CYCLE_RESPONSE_CMD_REQ_ID (250) //8 bytes
 #define GET_FAN_VOLTAGE_RESPONSE_CMD_REQ_ID (251) //2 bytes
-#define SET_FAN_VOLTAGE_RESPONSE_CMD_REQ_ID (252) //6 bytes
+#define SET_FAN_VOLTAGE_RESPONSE_CMD_REQ_ID (252) //8 bytes
 #define GET_FAN_MODE_TRANSITIONS_CMD_REQ_ID (253) //2 bytes
 #define SET_FAN_MODE_TRANSITIONS_CMD_REQ_ID (254) //4 bytes
 
@@ -105,7 +105,10 @@ enum {FAN_VOLTAGE_MODE=1, FAN_PWM_MODE=2, FAN_DISABLED_MODE=4, FAN_CUSTOM_MODE=8
 #define FAN_CORRECTED_MAX_VOLTAGE_SCALE ((int16_t)ceil(FAN_MAX_VOLTAGE_SCALE*256./UINT8_MAX))
 #define FAN_OFF_LEVEL_DEFAULT_VALUE (0x016D)
 #define FAN_SAFE_WORKING_VOLTAGE ((int16_t)round(4000./FAN_MAX_REAL_VOLTAGE*FAN_MAX_VOLTAGE_SCALE))
+#define calc_d2vdout2(v_no_out, dvdout) (((int16_t)ceil((FAN_MAX_VOLTAGE_SCALE - v_no_out - (int16_t)((((int32_t)dvdout)*UINT8_MAX)>>8))*(65536./65025))))
 
 #define FAN_SAFE_WORKING_DUTY_CYCLE (64)
+#define calc_d2dcdout2(dc_no_out, ddcdout) (((int16_t)ceil((((uint16_t)UINT8_MAX)*64 - dc_no_out - (int16_t)((((int32_t)ddcdout)*UINT8_MAX)>>8))*(65536./65025))))
+#define calc_dcnoout(ddcdout, d2dcdout2) (((int16_t)(((uint16_t)UINT8_MAX)*64 - (int16_t)((((int32_t)ddcdout)*UINT8_MAX)>>8) - (int16_t)((((int32_t)UINT8_MAX)*d2dcdout2*UINT8_MAX)>>16))))
 
 #endif
