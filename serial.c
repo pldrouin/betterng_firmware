@@ -2,7 +2,6 @@
 
 volatile struct uart_buffer readbuf;
 volatile struct uart_buffer writebuf;
-uint16_t uart_byte_timeout=0;
 
 uint8_t write_byte_to_uart_buf(struct uart_buffer volatile* buf, const uint8_t byte)
 {

@@ -18,11 +18,10 @@ int main(void)
 {
     csr=MCU_CONTROL_STATUS_REG;
     MCU_CONTROL_STATUS_REG=0;
-    //uint8_t eebyte = eeprom_read_byte((uint8_t*)0);
 
-    /* Initialization */    
+    // Initialization
     GENERAL_INTERRUPT_CONTROL_REG &= ~(_BV(ENABLE_INT0_INTR)|_BV(ENABLE_INT1_INTR)|_BV(ENABLE_INT2_INTR));
-    inituart(115200); // Initialize UART.
+    inituart(); // Initialize UART.
 
     if(csr) {
 
@@ -61,13 +60,7 @@ int main(void)
 
     struct cmd cmd;
 
-    //for(i=0; i<N_MAX_FANS; ++i) add_fan(i);
     watchdogReset();
-
-    //set_fan_voltage_response(0, 3., (12.-3.)/255, 0);
-    //set_fan_voltage_response(1, 3., (12.-3.)/255, 0);
-    //set_fan_voltage_response(2, 3., (12.-3.)/255, 0);
-    //set_fan_voltage_response(3, 3000, (12000-3000)*250/255, 0);
 
     while(1) {
       reset_buzz_alarm();

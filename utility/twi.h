@@ -40,8 +40,18 @@
   void twi_init(void);
   void twi_disable(void);
   void twi_setAddress(uint8_t);
-  void twi_setFrequency(uint32_t);
-  uint8_t twi_readFrom(uint8_t, uint8_t*, uint8_t, uint8_t);
+
+  static inline void twi_setFrequency(uint32_t frequency)
+  {
+    TWI_BIT_RATE_REG = ((F_CPU / frequency) - 16) / 2;
+
+    /* twi bit rate formula from atmega128 manual pg 204
+    SCL Frequency = CPU Clock Frequency / (16 + (2 * TWI_BIT_RATE_REG))
+    note: TWI_BIT_RATE_REG should be 10 or higher for master mode
+    It is 72 for a 16mhz Wiring board with 100kHz TWI */
+  }
+
+uint8_t twi_readFrom(uint8_t, uint8_t*, uint8_t, uint8_t);
   uint8_t twi_writeTo(uint8_t, uint8_t*, uint8_t, uint8_t, uint8_t);
 #ifdef TWI_SLAVE_SUPPORT
   uint8_t twi_transmit(const uint8_t*, uint8_t);

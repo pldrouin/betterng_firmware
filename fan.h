@@ -36,18 +36,18 @@
 #define set_fan_pin_as_input(MODE, ID) (cbi(FAN_ ## MODE ## _DDR, FAN_ ## MODE ## _FIRST_NO+ID))
 #define read_fan_pin(MODE, ID) (bit_is_set(FAN_ ## MODE ## _PIN, FAN_ ## MODE ## _FIRST_NO+ID)!=0)
 
-#define convert_fan_rpm(TACH_PWM_TICKS) ((int16_t)((F_CPU/FAN_TIMER_PRESCALE)*(int32_t)30/(FAN_TIMER_ALARM+1)/TACH_PWM_TICKS))
+#define convert_fan_rpm(TACH_TICKS) ((int16_t)((F_CPU/FAN_TIMER_PRESCALE)*(int32_t)30/(FAN_TIMER_ALARM+1)/TACH_TICKS))
 
 #define FAN_DEFAULT_OUTPUT_VALUE (128U)
 
 #define FAN_VNOOUT_DEFAULT_VALUE (FAN_SAFE_WORKING_VOLTAGE)
-#define FAN_DVDOUT_DEFAULT_VALUE (((int16_t)ceil((FAN_MAX_VOLTAGE_SCALE - FAN_SAFE_WORKING_VOLTAGE)*256./UINT8_MAX)))
-#define calc_d2vdout2(v_no_out, dvdout) (((int16_t)ceil((FAN_MAX_VOLTAGE_SCALE - v_no_out - (int16_t)((((int32_t)dvdout)*UINT8_MAX)>>8))*65536./65025)))
+#define FAN_DVDOUT_DEFAULT_VALUE (((int16_t)ceil((FAN_MAX_VOLTAGE_SCALE - FAN_SAFE_WORKING_VOLTAGE)*(256./UINT8_MAX))))
+#define calc_d2vdout2(v_no_out, dvdout) (((int16_t)ceil((FAN_MAX_VOLTAGE_SCALE - v_no_out - (int16_t)((((int32_t)dvdout)*UINT8_MAX)>>8))*(65536./65025))))
 #define FAN_D2VDOUT2_DEFAULT_VALUE (0)
 
 #define FAN_DCNOOUT_DEFAULT_VALUE (FAN_SAFE_WORKING_DUTY_CYCLE*64)
-#define FAN_DDCDOUT_DEFAULT_VALUE (((int16_t)ceil((((uint16_t)UINT8_MAX)*64 - FAN_DCNOOUT_DEFAULT_VALUE)*256./UINT8_MAX)))
-#define calc_d2dcdout2(dc_no_out, ddcdout) (((int16_t)ceil((((uint16_t)UINT8_MAX)*64 - dc_no_out - (int16_t)((((int32_t)ddcdout)*UINT8_MAX)>>8))*65536./65025)))
+#define FAN_DDCDOUT_DEFAULT_VALUE (((int16_t)ceil((((uint16_t)UINT8_MAX)*64 - FAN_DCNOOUT_DEFAULT_VALUE)*(256./UINT8_MAX))))
+#define calc_d2dcdout2(dc_no_out, ddcdout) (((int16_t)ceil((((uint16_t)UINT8_MAX)*64 - dc_no_out - (int16_t)((((int32_t)ddcdout)*UINT8_MAX)>>8))*(65536./65025))))
 #define calc_dcnoout(ddcdout, d2dcdout2) (((int16_t)(((uint16_t)UINT8_MAX)*64 - (int16_t)((((int32_t)ddcdout)*UINT8_MAX)>>8) - (int16_t)((((int32_t)UINT8_MAX)*d2dcdout2*UINT8_MAX)>>16))))
 #define FAN_D2DCDOUT2_DEFAULT_VALUE (0)
 
@@ -80,8 +80,8 @@ struct fan
 
   //List of unsaved values;
   int16_t level;       //Calculated target ADC level
-  volatile int16_t prev_tach_pwm_ticks;
-  uint16_t cur_tach_pwm_ticks;
+  volatile int16_t prev_tach_ticks;
+  uint16_t cur_tach_ticks;
   uint16_t cur_tach_phase;
   int8_t last_temp;
   uint8_t pwm_counter_offset;

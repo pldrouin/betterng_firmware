@@ -2,8 +2,11 @@
 #define _SERIAL_
 
 #include <avr/interrupt.h>
+#include "cmd_common.h"
 #include "defines.h"
 #include "timer.h"
+
+#define SERIAL_UART_BYTE_TIMEOUT ((9000000*UART_TIMEOUT_N_BYTE_DURATIONS+UART_BAUDRATE/2)/UART_BAUDRATE)
 
 struct uart_buffer{
   uint8_t buf[UART_BUFFER_SIZE];
@@ -13,9 +16,8 @@ struct uart_buffer{
 
 extern volatile struct uart_buffer readbuf;
 extern volatile struct uart_buffer writebuf;
-extern uint16_t uart_byte_timeout;
 
-//static inline void inituart(long baudrate);
+//static inline void inituart();
 uint8_t write_byte_to_uart_buf(struct uart_buffer volatile* buf, const uint8_t byte);
 uint8_t read_byte_from_uart_buf(struct uart_buffer volatile* buf, uint8_t* byte);
 //static inline uint8_t uart_send_byte(const uint8_t byte);

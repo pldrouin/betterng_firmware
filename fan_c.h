@@ -10,8 +10,8 @@ static inline void initfan_data(void)
 
   for(id=0U; id<N_MAX_FANS; ++id) {
     struct fan* const fan=fans+id;
-    fan->prev_tach_pwm_ticks=INT16_MAX;
-    fan->cur_tach_pwm_ticks=1;
+    fan->prev_tach_ticks=INT16_MAX;
+    fan->cur_tach_ticks=1;
     fan->cur_tach_phase=0;
     fan->vnoout=FAN_VNOOUT_DEFAULT_VALUE;
     fan->dvdout=FAN_DVDOUT_DEFAULT_VALUE;
@@ -353,7 +353,7 @@ static inline uint8_t get_fan_mode(const uint8_t id)
 static inline int16_t get_fan_rpm(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return 0;
-  uint16_t rpm = convert_fan_rpm(fans[id].prev_tach_pwm_ticks);
+  uint16_t rpm = convert_fan_rpm(fans[id].prev_tach_ticks);
   return (abs(rpm)==convert_fan_rpm(INT16_MAX)?0:rpm);
 }
 
@@ -379,11 +379,11 @@ static inline void update_fans(void)
     id=fanlist[index];
     fan=fans+id;
 
-    if(fan->prev_tach_pwm_ticks==-INT16_MAX) {
+    if(fan->prev_tach_ticks==-INT16_MAX) {
       switch_fan_control(id, FAN_DISABLED_MODE);
       request_buzz_alarm();
 
-    } else if((fan->mode&FAN_STARTING_FLAG) && fan->prev_tach_pwm_ticks!=INT16_MAX) {
+    } else if((fan->mode&FAN_STARTING_FLAG) && fan->prev_tach_ticks!=INT16_MAX) {
       switch_fan_control(id, fan->mode&(~FAN_STARTING_FLAG));
     }
 

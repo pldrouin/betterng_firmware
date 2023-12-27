@@ -1,16 +1,16 @@
-static inline void inituart(long baudrate)
+static inline void inituart(void)
 {
   readbuf.currbyte=readbuf.curwbyte=0;
   writebuf.currbyte=writebuf.curwbyte=0;
   uint16_t prescale;
  
-  if(baudrate<=19200) {
+  if(UART_BAUDRATE<=19200) {
     UART_CONTROL_REG_A &= ~_BV(ENABLE_DOUBLE_SPEED);
-    prescale = ((F_CPU / (baudrate * 16UL))) - 1;
+    prescale = ((F_CPU / (UART_BAUDRATE * 16UL))) - 1;
 
   } else {
     UART_CONTROL_REG_A |= _BV(ENABLE_DOUBLE_SPEED);
-    prescale = ((F_CPU / (baudrate * 8UL))) - 1;
+    prescale = ((F_CPU / (UART_BAUDRATE * 8UL))) - 1;
   }
   BAUD_RATE_LOW_REG = prescale;
   BAUD_RATE_HIGH_REG = (prescale >> 8);
@@ -22,8 +22,6 @@ static inline void inituart(long baudrate)
   // 1 stopbit
   //UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_EVEN_PARITY) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
   UART_CONTROL_REG_C = _BV(REGISTER_SELECT) | _BV(ENABLE_CHARACTER_SIZE_1) | _BV(ENABLE_CHARACTER_SIZE_0);
-
-  uart_byte_timeout=(9000000*UART_TIMEOUT_N_BYTE_DURATIONS+baudrate/2)/baudrate;
 }
 
 static inline void flush_uart_buf(volatile struct uart_buffer* buf)
@@ -137,7 +135,7 @@ static inline uint8_t uart_send_byte_timeout(const uint8_t byte)
 {
   
   if(!write_byte_to_uart_buf(&writebuf, byte)) {
-    timer_minimum_micros_start(uart_byte_timeout);
+    timer_minimum_micros_start(SERIAL_UART_BYTE_TIMEOUT);
 
     while(!timer_delay_verify()) {
 
@@ -157,7 +155,7 @@ static inline uint8_t uart_receive_byte_timeout(uint8_t* byte)
 {
  
   if(!read_byte_from_uart_buf(&readbuf, byte)) {
-    timer_minimum_micros_start(uart_byte_timeout);
+    timer_minimum_micros_start(SERIAL_UART_BYTE_TIMEOUT);
 
     while(!timer_delay_verify()) {
 
@@ -180,7 +178,7 @@ static inline unsigned int uart_send_bytes_timeout(const uint8_t* buf, const uns
   for(i=0; i<len; ++i) {
 
     if(!write_byte_to_uart_buf(&writebuf, buf[i])) {
-      timer_minimum_micros_start(uart_byte_timeout);
+      timer_minimum_micros_start(SERIAL_UART_BYTE_TIMEOUT);
 
       while(!timer_delay_verify()) {
 
@@ -205,7 +203,7 @@ static inline unsigned int uart_receive_bytes_timeout(uint8_t* buf, const unsign
   for(i=0; i<len; ++i) {
 
     if(!read_byte_from_uart_buf(&readbuf, buf+i)) {
-      timer_minimum_micros_start(uart_byte_timeout);
+      timer_minimum_micros_start(SERIAL_UART_BYTE_TIMEOUT);
 
       while(!timer_delay_verify()) {
 
