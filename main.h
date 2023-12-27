@@ -3,7 +3,8 @@
 #include "defines.h"
 #include <avr/eeprom.h>
 
-
+#include "overtemp.h"
+#include "eeprom.h"
 #include "timer.h"
 #include "serial.h"
 #include "fan.h"

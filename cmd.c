@@ -1,7 +1,15 @@
+#include <stdbool.h>
+#include "fan.h"
+#include "eeprom.h"
+#include "buzzer.h"
+#include "temp_sensors.h"
 #include "cmd.h"
 
 void ping_cmd(struct cmd* const cmd);
 void reset_cmd(struct cmd* const cmd);
+
+void eeprom_save_cmd(struct cmd* const cmd);
+void silence_alarm_cmd(struct cmd* const cmd);
 
 void add_lm75a_temp_sensor_cmd(struct cmd* const cmd);
 void del_lm75a_temp_sensor_cmd(struct cmd* const cmd);
@@ -9,9 +17,6 @@ void get_lm75a_temp_sensor_list_cmd(struct cmd* const cmd);
 void add_analog_temp_sensor_cmd(struct cmd* const cmd);
 void del_analog_temp_sensor_cmd(struct cmd* const cmd);
 void get_analog_temp_sensor_list_cmd(struct cmd* const cmd);
-void add_soft_temp_sensor_cmd(struct cmd* const cmd);
-void del_soft_temp_sensor_cmd(struct cmd* const cmd);
-void get_soft_temp_sensor_list_cmd(struct cmd* const cmd);
 void get_lm75a_sensor_value_cmd(struct cmd* const cmd);
 void get_analog_sensor_value_cmd(struct cmd* const cmd);
 void get_soft_sensor_value_cmd(struct cmd* const cmd);
@@ -39,12 +44,10 @@ void get_fan_n_curve_points_cmd(struct cmd* const cmd);
 void get_fan_curve_point_cmd(struct cmd* const cmd);
 
 void get_fan_rpm_cmd(struct cmd* const cmd);
-void get_fan_off_level_cmd(struct cmd* const cmd);
-void get_fan_voltage_cmd(struct cmd* const cmd);
-void get_fan_voltage_target_cmd(struct cmd* const cmd);
 
-void fan_adc_calibration_cmd(struct cmd* const cmd);
+void get_fan_mode_cmd(struct cmd* const cmd);
 void switch_fan_control_cmd(struct cmd* const cmd);
+void get_fan_adc_value_cmd(struct cmd* const cmd);
 void get_fan_output_cmd(struct cmd* const cmd);
 void set_fan_output_cmd(struct cmd* const cmd);
 void set_fan_output_auto_cmd(struct cmd* const cmd);
@@ -55,11 +58,6 @@ void set_fan_voltage_response_cmd(struct cmd* const cmd);
 void get_fan_mode_transitions_cmd(struct cmd* const cmd);
 void set_fan_mode_transitions_cmd(struct cmd* const cmd);
 void ack_cmd(struct cmd* const cmd);
-
-static inline void send_cmd(const struct cmd* const cmd)
-{
-  uart_send_bytes((const uint8_t*)cmd, cmd->nbytes+2);
-}
 
 //Outgoing commands 3 bytes
 static inline void ack(const uint8_t id, const int8_t ret, struct cmd* const cmd)
@@ -80,8 +78,8 @@ struct input_cmd {
 const __flash struct input_cmd input_cmds[] = {
     {ping_cmd, 0}, //  0
     {reset_cmd,0}, //  1
-    {0,0}, //  2
-    {0,0}, //  3
+    {eeprom_save_cmd,0}, //2
+    {silence_alarm_cmd,0}, //  3
     {0,0}, //  4
     {0,0}, //  5
     {0,0}, //  6
@@ -285,45 +283,45 @@ const __flash struct input_cmd input_cmds[] = {
     {0,0}, //204
     {0,0}, //205
     {0,0}, //206
-    {add_lm75a_temp_sensor_cmd,1}, //207
-    {del_lm75a_temp_sensor_cmd,1}, //208
-    {get_lm75a_temp_sensor_list_cmd,0}, //209
-    {add_analog_temp_sensor_cmd,1}, //210
-    {del_analog_temp_sensor_cmd,1}, //211
-    {get_analog_temp_sensor_list_cmd,0}, //212
-    {add_soft_temp_sensor_cmd,1}, //213
-    {del_soft_temp_sensor_cmd,1}, //214
-    {get_soft_temp_sensor_list_cmd,0}, //215
-    {get_lm75a_sensor_value_cmd,1}, //216
-    {get_analog_sensor_value_cmd,1}, //217
-    {get_soft_sensor_value_cmd,1}, //218
-    {get_lm75a_temp_sensor_calib_cmd,1}, //219
-    {get_analog_temp_sensor_calib_cmd,1}, //220
-    {set_lm75a_temp_sensor_calib_cmd,7}, //221
-    {set_analog_temp_sensor_calib_cmd,7}, //222
-    {set_soft_temp_sensor_value_cmd,3}, //223
-    {add_fan_cmd,1}, //224
-    {del_fan_cmd,1}, //225
-    {get_fan_list_cmd,0}, //226
-    {add_fan_lm75a_temp_sensor_cmd,2}, //227
-    {add_fan_analog_temp_sensor_cmd,2}, //228
-    {add_fan_soft_temp_sensor_cmd,2}, //229
-    {del_fan_lm75a_temp_sensor_cmd,2}, //230
-    {del_fan_analog_temp_sensor_cmd,2}, //231
-    {del_fan_soft_temp_sensor_cmd,2}, //232
-    {get_fan_lm75a_temp_sensor_list_cmd,1}, //233
-    {get_fan_analog_temp_sensor_list_cmd,1}, //234
-    {get_fan_soft_temp_sensor_list_cmd,1}, //235
-    {add_fan_curve_point_cmd,3}, //236
-    {del_fan_curve_point_cmd,2}, //237
-    {get_fan_n_curve_points_cmd,1}, //238
-    {get_fan_curve_point_cmd,2}, //239
-    {get_fan_rpm_cmd, 1}, //  240
-    {get_fan_off_level_cmd,1}, //241
-    {get_fan_voltage_cmd,1}, //242
-    {get_fan_voltage_target_cmd,1}, //243
-    {fan_adc_calibration_cmd, 1}, //244
-    {switch_fan_control_cmd, 2}, //245
+    {0,0}, //207
+    {0,0}, //208
+    {0,0}, //209
+    {0,0}, //210
+    {0,0}, //211
+    {add_lm75a_temp_sensor_cmd,1}, //212
+    {del_lm75a_temp_sensor_cmd,1}, //213
+    {get_lm75a_temp_sensor_list_cmd,0}, //214
+    {add_analog_temp_sensor_cmd,1}, //215
+    {del_analog_temp_sensor_cmd,1}, //216
+    {get_analog_temp_sensor_list_cmd,0}, //217
+    {get_lm75a_sensor_value_cmd,1}, //218
+    {get_analog_sensor_value_cmd,1}, //219
+    {get_soft_sensor_value_cmd,1}, //220
+    {get_lm75a_temp_sensor_calib_cmd,1}, //221
+    {get_analog_temp_sensor_calib_cmd,1}, //222
+    {set_lm75a_temp_sensor_calib_cmd,7}, //223
+    {set_analog_temp_sensor_calib_cmd,7}, //224
+    {set_soft_temp_sensor_value_cmd,3}, //225
+    {add_fan_cmd,1}, //226
+    {del_fan_cmd,1}, //227
+    {get_fan_list_cmd,0}, //228
+    {add_fan_lm75a_temp_sensor_cmd,2}, //229
+    {add_fan_analog_temp_sensor_cmd,2}, //230
+    {add_fan_soft_temp_sensor_cmd,2}, //231
+    {del_fan_lm75a_temp_sensor_cmd,2}, //232
+    {del_fan_analog_temp_sensor_cmd,2}, //233
+    {del_fan_soft_temp_sensor_cmd,2}, //234
+    {get_fan_lm75a_temp_sensor_list_cmd,1}, //235
+    {get_fan_analog_temp_sensor_list_cmd,1}, //236
+    {get_fan_soft_temp_sensor_list_cmd,1}, //237
+    {add_fan_curve_point_cmd,3}, //238
+    {del_fan_curve_point_cmd,2}, //239
+    {get_fan_n_curve_points_cmd,1}, //240
+    {get_fan_curve_point_cmd,2}, //241
+    {get_fan_rpm_cmd, 1}, //  242
+    {get_fan_mode_cmd, 1}, //  243
+    {switch_fan_control_cmd, 2}, //244
+    {get_fan_adc_value_cmd, 1}, //245
     {get_fan_output_cmd, 1}, //246
     {set_fan_output_cmd, 2}, //247
     {set_fan_output_auto_cmd, 2}, //248
@@ -365,6 +363,18 @@ void reset_cmd(struct cmd* const cmd)
   calc_check_bytes(cmd);
   send_cmd(cmd);
   while(1);
+}
+
+void eeprom_save_cmd(struct cmd* const cmd)
+{
+  int8_t ret=eeprom_save();
+  ack(cmd->id, ret, cmd);
+}
+
+void silence_alarm_cmd(struct cmd* const cmd)
+{
+  silence_alarm();
+  ack(cmd->id, 0, cmd);
 }
 
 void add_lm75a_temp_sensor_cmd(struct cmd* const cmd)
@@ -409,27 +419,6 @@ void get_analog_temp_sensor_list_cmd(struct cmd* const cmd)
   send_cmd(cmd);
 }
 
-void add_soft_temp_sensor_cmd(struct cmd* const cmd)
-{
-  int8_t ret=add_soft_temp_sensor(cmd->bytes[0]);
-  ack(cmd->id, ret, cmd);
-}
-
-void del_soft_temp_sensor_cmd(struct cmd* const cmd)
-{
-  int8_t ret=del_soft_temp_sensor(cmd->bytes[0]);
-  ack(cmd->id, ret, cmd);
-}
-
-void get_soft_temp_sensor_list_cmd(struct cmd* const cmd)
-{
-  cmd->id=GET_SOFT_TEMP_SENSOR_LIST_CMD_RESP_ID;
-  cmd->nbytes=1;
-  cmd->bytes[0]=get_soft_temp_sensor_list();
-  calc_check_bytes(cmd);
-  send_cmd(cmd);
-}
-
 void get_lm75a_sensor_value_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_LM75A_SENSOR_VALUE_CMD_RESP_ID;
@@ -461,12 +450,15 @@ void get_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_LM75A_TEMP_SENSOR_CALIB_CMD_RESP_ID;
   cmd->nbytes=7;
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
   int16_t a0, a1, a2;
   cmd->bytes[6]=get_lm75a_temp_sensor_calib(cmd->bytes[0], &a0, &a1, &a2);
 
   *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)a0);
   *((uint16_t*)&cmd->bytes[2])=htobe16((uint16_t)a1);
   *((uint16_t*)&cmd->bytes[4])=htobe16((uint16_t)a2);
+  #pragma GCC diagnostic pop
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -475,12 +467,15 @@ void get_analog_temp_sensor_calib_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_ANALOG_TEMP_SENSOR_CALIB_CMD_RESP_ID;
   cmd->nbytes=7;
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
   int16_t a0, a1, a2;
   cmd->bytes[6]=get_analog_temp_sensor_calib(cmd->bytes[0], &a0, &a1, &a2);
 
   *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)a0);
   *((uint16_t*)&cmd->bytes[2])=htobe16((uint16_t)a1);
   *((uint16_t*)&cmd->bytes[4])=htobe16((uint16_t)a2);
+  #pragma GCC diagnostic pop
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -613,11 +608,14 @@ void get_fan_curve_point_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_CURVE_POINT_CMD_RESP_ID;
   cmd->nbytes=3;
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
   int8_t temp;
   uint8_t output;
   cmd->bytes[2]=(uint8_t)get_fan_curve_point(cmd->bytes[0], cmd->bytes[1], &temp, &output);
   cmd->bytes[0]=(uint8_t)temp;
   cmd->bytes[1]=output;
+  #pragma GCC diagnostic pop
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -631,43 +629,34 @@ void get_fan_rpm_cmd(struct cmd* const cmd)
   send_cmd(cmd);
 }
 
-void get_fan_off_level_cmd(struct cmd* const cmd)
-{
-  cmd->id=GET_FAN_OFF_LEVEL_CMD_RESP_ID;
-  cmd->nbytes=2;
-  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_fan_off_level(cmd->bytes[0]));
-  calc_check_bytes(cmd);
-  send_cmd(cmd);
-}
-
-void get_fan_voltage_cmd(struct cmd* const cmd)
-{
-  cmd->id=GET_FAN_VOLTAGE_CMD_RESP_ID;
-  cmd->nbytes=2;
-  *((uint16_t*)&cmd->bytes[0])=htobe16(get_fan_voltage(cmd->bytes[0]));
-  calc_check_bytes(cmd);
-  send_cmd(cmd);
-}
-
-void get_fan_voltage_target_cmd(struct cmd* const cmd)
-{
-  cmd->id=GET_FAN_VOLTAGE_TARGET_CMD_RESP_ID;
-  cmd->nbytes=2;
-  *((uint16_t*)&cmd->bytes[0])=htobe16(get_fan_voltage_target(cmd->bytes[0]));
-  calc_check_bytes(cmd);
-  send_cmd(cmd);
-}
-
 void ack_cmd(struct cmd* const cmd)
 {
   last_ack_cmd=cmd->bytes[0];
   last_ack_value=(int8_t)cmd->bytes[1];
 }
 
+void get_fan_mode_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_FAN_MODE_CMD_RESP_ID;
+  cmd->nbytes=1;
+  cmd->bytes[0]=get_fan_mode(cmd->bytes[0]);
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
 void switch_fan_control_cmd(struct cmd* const cmd)
 {
   int8_t ret=switch_fan_control(cmd->bytes[0], cmd->bytes[1]);
   ack(cmd->id, ret, cmd);
+}
+
+void get_fan_adc_value_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_FAN_ADC_VALUE_CMD_RESP_ID;
+  cmd->nbytes=1;
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_fan_adc_value(cmd->bytes[0]));
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
 }
 
 void get_fan_output_cmd(struct cmd* const cmd)
@@ -751,11 +740,5 @@ void get_fan_mode_transitions_cmd(struct cmd* const cmd)
 void set_fan_mode_transitions_cmd(struct cmd* const cmd)
 {
   int8_t ret=set_fan_mode_transitions(cmd->bytes[0], cmd->bytes[1], cmd->bytes[2]);
-  ack(cmd->id, ret, cmd);
-}
-
-void fan_adc_calibration_cmd(struct cmd* const cmd)
-{
-  uint8_t ret=fan_adc_calibration(cmd->bytes[0]);
   ack(cmd->id, ret, cmd);
 }

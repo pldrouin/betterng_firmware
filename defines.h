@@ -2,6 +2,7 @@
 #ifndef	_DEFINES_
 #define	_DEFINES_
 
+#include <stdbool.h>
 #include <math.h>
 #include <avr/sfr_defs.h>
 
@@ -15,6 +16,8 @@
 
 /* baud rate register value calculation */
 #define F_CPU   16000000
+
+#define EEPROM_SIZE 512
 
 #define WDTCSR	    WDTCR
 #define WDCE        WDTOE
@@ -260,9 +263,12 @@ static inline void watchdogConfig(uint8_t x)
 
 #define BUZZ_DDR        DDRD
 #define BUZZ_PORT       PORTD
+#define BUZZ_PIN        PIND
 #define BUZZ_NO         PD6
 
+#define OVERTEMP_DDR	DDRC
 #define OVERTEMP_PORT	PORTC
+#define OVERTEMP_PIN	PINC
 #define OVERTEMP_NO	PC2
 
 #define MCU_LED_DDR        DDRD

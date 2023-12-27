@@ -18,7 +18,6 @@ int main(void)
 {
     csr=MCU_CONTROL_STATUS_REG;
     MCU_CONTROL_STATUS_REG=0;
-    int8_t i;
     //uint8_t eebyte = eeprom_read_byte((uint8_t*)0);
 
     /* Initialization */    
@@ -35,12 +34,19 @@ int main(void)
       else for(;;) UART_DATA_REG='?';
     }
     timer_init();
+    init_temp_sensor_data();
+    initfan_data(); //Initialize fans.
+
+    initovertemp();
+
+    set_pin_as_output(BUZZ); //Set buzzer pin as an output
+    set_pin_as_output(MCU_LED); //Set buzzer pin as an output
+
+    eeprom_load();
     initfans(); //Initialize fans.
     initadc(); // Initialize UART.
     sei();
 
-    set_pin_as_output(BUZZ); //Set buzzer pin as an output
-    set_pin_as_output(MCU_LED); //Set buzzer pin as an output
     set_pin(BUZZ, true);
     set_pin(MCU_LED, true);
     idle_timer_delay_millis(1000);
