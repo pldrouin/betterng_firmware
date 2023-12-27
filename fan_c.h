@@ -350,11 +350,10 @@ static inline uint8_t get_fan_mode(const uint8_t id)
   return fans[id].mode;
 }
 
-static inline int16_t get_fan_rpm(const uint8_t id)
+static inline int16_t get_fan_tach_ticks(const uint8_t id)
 {
-  if(id>=N_MAX_FANS) return 0;
-  uint16_t rpm = convert_fan_rpm(fans[id].prev_tach_ticks);
-  return (abs(rpm)==convert_fan_rpm(INT16_MAX)?0:rpm);
+  if(id>=N_MAX_FANS) return INT16_MAX;
+  return fans[id].prev_tach_ticks;
 }
 
 static inline void update_fans(void)

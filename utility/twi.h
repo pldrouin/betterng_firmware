@@ -23,6 +23,8 @@
   #include <inttypes.h>
   #include <stdbool.h>
 
+  #include "cmd_common.h"
+
   #ifndef TWI_FREQ
   #define TWI_FREQ 100000L
   #endif

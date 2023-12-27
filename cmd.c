@@ -42,7 +42,7 @@ void del_fan_curve_point_cmd(struct cmd* const cmd);
 void get_fan_n_curve_points_cmd(struct cmd* const cmd);
 void get_fan_curve_point_cmd(struct cmd* const cmd);
 
-void get_fan_rpm_cmd(struct cmd* const cmd);
+void get_fan_tach_ticks_cmd(struct cmd* const cmd);
 
 void get_fan_mode_cmd(struct cmd* const cmd);
 void switch_fan_control_cmd(struct cmd* const cmd);
@@ -317,7 +317,7 @@ const __flash struct input_cmd input_cmds[] = {
     {del_fan_curve_point_cmd,2}, //239
     {get_fan_n_curve_points_cmd,1}, //240
     {get_fan_curve_point_cmd,2}, //241
-    {get_fan_rpm_cmd, 1}, //  242
+    {get_fan_tach_ticks_cmd, 1}, //  242
     {get_fan_mode_cmd, 1}, //  243
     {switch_fan_control_cmd, 2}, //244
     {get_fan_adc_value_cmd, 1}, //245
@@ -613,11 +613,11 @@ void get_fan_curve_point_cmd(struct cmd* const cmd)
   send_cmd(cmd);
 }
 
-void get_fan_rpm_cmd(struct cmd* const cmd)
+void get_fan_tach_ticks_cmd(struct cmd* const cmd)
 {
-  cmd->id=GET_FAN_RPM_CMD_RESP_ID;
+  cmd->id=GET_FAN_TACH_TICKS_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_fan_rpm(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_fan_tach_ticks(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }

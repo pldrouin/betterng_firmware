@@ -15,11 +15,8 @@
 #include "buzzer.h"
 
 //Prescaler to 64, 250kHz @ 16 MHz F_CPU
-#define FAN_PWM_FREQ (20000UL)
 #define FAN_TACH_MEASUREMENT_MAX_TICKS (FAN_PWM_FREQ)
 #define FAN_TACH_NO_TICK_TIMEOUT (2*FAN_PWM_FREQ)
-#define FAN_TIMER_PRESCALE TIMER_FINE_8BIT_PRESCALE(FAN_PWM_FREQ)
-#define FAN_TIMER_ALARM TIMER_FINE_8BIT_ALARM(FAN_PWM_FREQ)
 
 #define FAN_POSITIVE_PRESSURE (1)
 #define FAN_NEGATIVE_PRESSURE (-1)
@@ -36,7 +33,6 @@
 #define set_fan_pin_as_input(MODE, ID) (cbi(FAN_ ## MODE ## _DDR, FAN_ ## MODE ## _FIRST_NO+ID))
 #define read_fan_pin(MODE, ID) (bit_is_set(FAN_ ## MODE ## _PIN, FAN_ ## MODE ## _FIRST_NO+ID)!=0)
 
-#define convert_fan_rpm(TACH_TICKS) ((int16_t)((F_CPU/FAN_TIMER_PRESCALE)*(int32_t)30/(FAN_TIMER_ALARM+1)/TACH_TICKS))
 
 #define FAN_DEFAULT_OUTPUT_VALUE (128U)
 
@@ -121,7 +117,7 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output);
 int8_t set_fan_output_auto(const uint8_t id, const uint8_t output);
 //static inline uint8_t get_fan_mode(const uint8_t id);
 int8_t switch_fan_control(const uint8_t id, const uint8_t mode);
-//static inline int16_t get_fan_rpm(const uint8_t id);
+//static inline int16_t get_fan_tach_ticks(const uint8_t id);
 //static inline void update_fans(void);
 
 #include "fan_c.h"

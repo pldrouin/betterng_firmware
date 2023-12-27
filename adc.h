@@ -2,9 +2,9 @@
 #define _ADC_
 
 #include <avr/interrupt.h>
+#include "cmd_common.h"
 #include "defines.h"
 #include <util/delay.h>
-#include "cmd_common.h"
 
 extern volatile int16_t adc_values[ADC_NCHANNELS];
 extern uint8_t cur_adc_channel;
