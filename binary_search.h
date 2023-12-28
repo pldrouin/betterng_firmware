@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 
+// Returns the index of the element which holds the provided value if found, or
+// otherwise the insertion position to preserve ordering.
 static inline uint8_t binary_search(const int8_t x, int8_t const* const xs, const uint8_t n)
 {
-  if(x >= xs[n-1]) return n-1; 
+  if(x > xs[n-1]) return n; 
 
   else if(x <= xs[0]) return 0;
 
@@ -19,14 +21,14 @@ static inline uint8_t binary_search(const int8_t x, int8_t const* const xs, cons
       hdiff=diff>>1;
       mid=ret+hdiff;
 
-      if(x>=xs[mid]) {
+      if(x>xs[mid]) {
 	ret=++mid;
 	diff-=hdiff+1;
 
       } else diff=hdiff;
     }
 
-    return ret-1;
+    return ret;
   }
 }
 

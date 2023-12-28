@@ -222,13 +222,17 @@ static inline int8_t add_fan_curve_point(const uint8_t fan_id, const int8_t temp
   if(fan->ncurvepoints==MAX_CURVE_NPOINTS) return -2;
   uint8_t i=binary_search(temp, fan->curve_temps, fan->ncurvepoints);
 
-  if(fan->curve_temps[i]==temp) {
-    fan->curve_outputs[i]=output;
-    return 0;
-  }
-  ++(fan->ncurvepoints);
-  memmove(fan->curve_temps+i+1, fan->curve_temps+i, fan->ncurvepoints-i);
-  memmove(fan->curve_outputs+i+1, fan->curve_outputs+i, fan->ncurvepoints-i);
+  if(i < fan->ncurvepoints) {
+
+    if(fan->curve_temps[i]==temp) {
+      fan->curve_outputs[i]=output;
+      return 0;
+    }
+    ++(fan->ncurvepoints);
+    memmove(fan->curve_temps+i+1, fan->curve_temps+i, fan->ncurvepoints-i);
+    memmove(fan->curve_outputs+i+1, fan->curve_outputs+i, fan->ncurvepoints-i);
+
+  } else ++(fan->ncurvepoints);
   fan->curve_temps[i]=temp;
   fan->curve_outputs[i]=output;
   return 0;
