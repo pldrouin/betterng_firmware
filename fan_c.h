@@ -369,7 +369,7 @@ static inline void update_fans(void)
   }
 
   uint8_t id;
-  uint8_t s;
+  int8_t s;
   struct fan* fan;
   int8_t temp, maxtemp=0;
   update_temp_values();
@@ -406,12 +406,12 @@ static inline void update_fans(void)
 	if(temp > maxtemp) maxtemp=temp;
       }
 
-      if(abs(temp - fan->last_temp) > fan->hysterisis) {
-	fan->last_temp = temp;
+      if(abs(maxtemp - fan->last_temp) > fan->hysterisis) {
+	fan->last_temp = maxtemp;
 
-	if(temp >= fan->curve_temps[fan->ncurvepoints-1]) set_fan_output_auto(id, fan->curve_outputs[fan->ncurvepoints-1]); 
+	if(maxtemp >= fan->curve_temps[fan->ncurvepoints-1]) set_fan_output_auto(id, fan->curve_outputs[fan->ncurvepoints-1]); 
 
-	else if(temp <= fan->curve_temps[0]) set_fan_output_auto(id, fan->curve_outputs[0]);
+	else if(maxtemp <= fan->curve_temps[0]) set_fan_output_auto(id, fan->curve_outputs[0]);
 	
 	else {
 	  uint8_t ret=1;
@@ -423,13 +423,13 @@ static inline void update_fans(void)
 	    hdiff=diff>>1;
 	    mid=ret+hdiff;
 
-	    if(temp>=fan->curve_temps[mid]) {
+	    if(maxtemp>=fan->curve_temps[mid]) {
 	      ret=++mid;
 	      diff-=hdiff+1;
 
 	    } else diff=hdiff;
 	  }
-	  set_fan_output_auto(id, (uint8_t)(fan->curve_outputs[ret-1]+((int16_t)fan->curve_outputs[ret]-fan->curve_outputs[ret-1])*(temp-fan->curve_temps[ret-1])/(fan->curve_temps[ret]-fan->curve_temps[ret-1])));
+	  set_fan_output_auto(id, (uint8_t)(fan->curve_outputs[ret-1]+((int16_t)fan->curve_outputs[ret]-fan->curve_outputs[ret-1])*(maxtemp-fan->curve_temps[ret-1])/(fan->curve_temps[ret]-fan->curve_temps[ret-1])));
 	}
       }
     }

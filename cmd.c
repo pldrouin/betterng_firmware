@@ -16,14 +16,20 @@ void get_lm75a_temp_sensor_list_cmd(struct cmd* const cmd);
 void add_analog_temp_sensor_cmd(struct cmd* const cmd);
 void del_analog_temp_sensor_cmd(struct cmd* const cmd);
 void get_analog_temp_sensor_list_cmd(struct cmd* const cmd);
-void get_lm75a_sensor_value_cmd(struct cmd* const cmd);
-void get_analog_sensor_value_cmd(struct cmd* const cmd);
-void get_soft_sensor_value_cmd(struct cmd* const cmd);
+void get_lm75a_temp_sensor_value_cmd(struct cmd* const cmd);
+void get_analog_temp_sensor_value_cmd(struct cmd* const cmd);
+void get_soft_temp_sensor_value_cmd(struct cmd* const cmd);
 void get_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd);
 void get_analog_temp_sensor_calib_cmd(struct cmd* const cmd);
 void set_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd);
 void set_analog_temp_sensor_calib_cmd(struct cmd* const cmd);
 void set_soft_temp_sensor_value_cmd(struct cmd* const cmd);
+void get_lm75a_temp_sensor_alarm_value_cmd(struct cmd* const cmd);
+void get_analog_temp_sensor_alarm_value_cmd(struct cmd* const cmd);
+void get_soft_temp_sensor_alarm_value_cmd(struct cmd* const cmd);
+void set_lm75a_temp_sensor_alarm_value_cmd(struct cmd* const cmd);
+void set_analog_temp_sensor_alarm_value_cmd(struct cmd* const cmd);
+void set_soft_temp_sensor_alarm_value_cmd(struct cmd* const cmd);
 
 void add_fan_cmd(struct cmd* const cmd);
 void del_fan_cmd(struct cmd* const cmd);
@@ -281,26 +287,26 @@ const __flash struct input_cmd input_cmds[] = {
     {0,0}, //203
     {0,0}, //204
     {0,0}, //205
-    {0,0}, //206
-    {0,0}, //207
-    {0,0}, //208
-    {0,0}, //209
-    {0,0}, //210
-    {0,0}, //211
-    {add_lm75a_temp_sensor_cmd,1}, //212
-    {del_lm75a_temp_sensor_cmd,1}, //213
-    {get_lm75a_temp_sensor_list_cmd,0}, //214
-    {add_analog_temp_sensor_cmd,1}, //215
-    {del_analog_temp_sensor_cmd,1}, //216
-    {get_analog_temp_sensor_list_cmd,0}, //217
-    {get_lm75a_sensor_value_cmd,1}, //218
-    {get_analog_sensor_value_cmd,1}, //219
-    {get_soft_sensor_value_cmd,1}, //220
-    {get_lm75a_temp_sensor_calib_cmd,1}, //221
-    {get_analog_temp_sensor_calib_cmd,1}, //222
-    {set_lm75a_temp_sensor_calib_cmd,7}, //223
-    {set_analog_temp_sensor_calib_cmd,7}, //224
-    {set_soft_temp_sensor_value_cmd,3}, //225
+    {add_lm75a_temp_sensor_cmd,1}, //206
+    {del_lm75a_temp_sensor_cmd,1}, //207
+    {get_lm75a_temp_sensor_list_cmd,0}, //208
+    {add_analog_temp_sensor_cmd,1}, //209
+    {del_analog_temp_sensor_cmd,1}, //210
+    {get_analog_temp_sensor_list_cmd,0}, //211
+    {get_lm75a_temp_sensor_value_cmd,1}, //212
+    {get_analog_temp_sensor_value_cmd,1}, //213
+    {get_soft_temp_sensor_value_cmd,1}, //214
+    {get_lm75a_temp_sensor_calib_cmd,1}, //215
+    {get_analog_temp_sensor_calib_cmd,1}, //216
+    {set_lm75a_temp_sensor_calib_cmd,7}, //217
+    {set_analog_temp_sensor_calib_cmd,7}, //218
+    {set_soft_temp_sensor_value_cmd,3}, //219
+    {get_lm75a_temp_sensor_alarm_value_cmd,1}, //220
+    {get_analog_temp_sensor_alarm_value_cmd,1}, //221
+    {get_soft_temp_sensor_alarm_value_cmd,1}, //222
+    {set_lm75a_temp_sensor_alarm_value_cmd,3}, //223
+    {set_analog_temp_sensor_alarm_value_cmd,3}, //224
+    {set_soft_temp_sensor_alarm_value_cmd,3}, //225
     {add_fan_cmd,1}, //226
     {del_fan_cmd,1}, //227
     {get_fan_list_cmd,0}, //228
@@ -412,29 +418,29 @@ void get_analog_temp_sensor_list_cmd(struct cmd* const cmd)
   send_cmd(cmd);
 }
 
-void get_lm75a_sensor_value_cmd(struct cmd* const cmd)
+void get_lm75a_temp_sensor_value_cmd(struct cmd* const cmd)
 {
-  cmd->id=GET_LM75A_SENSOR_VALUE_CMD_RESP_ID;
+  cmd->id=GET_LM75A_TEMP_SENSOR_VALUE_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_lm75a_sensor_value(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_lm75a_temp_sensor_value(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
 
-void get_analog_sensor_value_cmd(struct cmd* const cmd)
+void get_analog_temp_sensor_value_cmd(struct cmd* const cmd)
 {
-  cmd->id=GET_ANALOG_SENSOR_VALUE_CMD_RESP_ID;
+  cmd->id=GET_ANALOG_TEMP_SENSOR_VALUE_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_analog_sensor_value(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_analog_temp_sensor_value(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
 
-void get_soft_sensor_value_cmd(struct cmd* const cmd)
+void get_soft_temp_sensor_value_cmd(struct cmd* const cmd)
 {
-  cmd->id=GET_SOFT_SENSOR_VALUE_CMD_RESP_ID;
+  cmd->id=GET_SOFT_TEMP_SENSOR_VALUE_CMD_RESP_ID;
   cmd->nbytes=2;
-  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_soft_sensor_value(cmd->bytes[0]));
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_soft_temp_sensor_value(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
@@ -491,6 +497,50 @@ void set_soft_temp_sensor_value_cmd(struct cmd* const cmd)
   ack(cmd->id, ret, cmd);
 }
 
+void get_lm75a_temp_sensor_alarm_value_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_LM75A_TEMP_SENSOR_ALARM_VALUE_CMD_RESP_ID;
+  cmd->nbytes=2;
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_lm75a_temp_sensor_alarm_value(cmd->bytes[0]));
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
+void get_analog_temp_sensor_alarm_value_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_ANALOG_TEMP_SENSOR_ALARM_VALUE_CMD_RESP_ID;
+  cmd->nbytes=2;
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_analog_temp_sensor_alarm_value(cmd->bytes[0]));
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
+void get_soft_temp_sensor_alarm_value_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_SOFT_TEMP_SENSOR_ALARM_VALUE_CMD_RESP_ID;
+  cmd->nbytes=2;
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_soft_temp_sensor_alarm_value(cmd->bytes[0]));
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
+void set_lm75a_temp_sensor_alarm_value_cmd(struct cmd* const cmd)
+{
+  int8_t ret=set_lm75a_temp_sensor_alarm_value(cmd->bytes[0], (int16_t)be16toh(*(uint16_t*)(cmd->bytes+1)));
+  ack(cmd->id, ret, cmd);
+}
+
+void set_analog_temp_sensor_alarm_value_cmd(struct cmd* const cmd)
+{
+  int8_t ret=set_analog_temp_sensor_alarm_value(cmd->bytes[0], (int16_t)be16toh(*(uint16_t*)(cmd->bytes+1)));
+  ack(cmd->id, ret, cmd);
+}
+
+void set_soft_temp_sensor_alarm_value_cmd(struct cmd* const cmd)
+{
+  int8_t ret=set_soft_temp_sensor_alarm_value(cmd->bytes[0], (int16_t)be16toh(*(uint16_t*)(cmd->bytes+1)));
+  ack(cmd->id, ret, cmd);
+}
 
 void add_fan_cmd(struct cmd* const cmd)
 {
@@ -717,7 +767,7 @@ void get_fan_voltage_response_cmd(struct cmd* const cmd)
 
 void set_fan_voltage_response_cmd(struct cmd* const cmd)
 {
-  int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
+  int8_t ret=set_fan_voltage_response(cmd->bytes[0], be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+5)));
   ack(cmd->id, ret, cmd);
 }
 

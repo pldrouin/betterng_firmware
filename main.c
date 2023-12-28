@@ -41,10 +41,15 @@ int main(void)
     set_pin_as_output(BUZZ); //Set buzzer pin as an output
     set_pin_as_output(MCU_LED); //Set buzzer pin as an output
 
-    eeprom_load();
+    int ret=eeprom_load();
     initfans(); //Initialize fans.
     initadc(); // Initialize UART.
     sei();
+
+    if(ret) {
+      buzz_signal(500);
+      idle_timer_delay_millis(500);
+    }
 
     set_pin(BUZZ, true);
     set_pin(MCU_LED, true);

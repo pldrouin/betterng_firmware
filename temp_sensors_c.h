@@ -102,19 +102,19 @@ static inline int8_t del_analog_temp_sensor(const uint8_t id)
   return del_temp_sensor(id, MAX_ANALOG_SENSORS, asenslist, &nasensors);
 }
 
-static inline int16_t get_lm75a_sensor_value(const uint8_t id)
+static inline int16_t get_lm75a_temp_sensor_value(const uint8_t id)
 {
   if(id>=LM75A_MAX_SENSORS) return TEMP_SENSOR_INVALID_VALUE;
   return lsensors[id].value;
 }
 
-static inline int16_t get_analog_sensor_value(const uint8_t id)
+static inline int16_t get_analog_temp_sensor_value(const uint8_t id)
 {
   if(id>=MAX_ANALOG_SENSORS) return TEMP_SENSOR_INVALID_VALUE;
   return asensors[id].value;
 }
 
-static inline int16_t get_soft_sensor_value(const uint8_t id)
+static inline int16_t get_soft_temp_sensor_value(const uint8_t id)
 {
   if(id>=N_MAX_SOFT_TEMP_SENSORS) return TEMP_SENSOR_INVALID_VALUE;
   return ssensors_values[id];
@@ -162,6 +162,45 @@ static inline int8_t set_soft_temp_sensor_value(const uint8_t id, const int16_t 
 {
       if(id>=N_MAX_SOFT_TEMP_SENSORS) return -1;
       ssensors_values[id]=value;
+      return 0;
+}
+
+static inline int16_t get_lm75a_temp_sensor_alarm_value(const uint8_t id)
+{
+      if(id>=LM75A_MAX_SENSORS) return -INT16_MAX;
+      return lsensors[id].alarm_value;
+}
+
+static inline int16_t get_analog_temp_sensor_alarm_value(const uint8_t id)
+{
+      if(id>=MAX_ANALOG_SENSORS) return -INT16_MAX;
+      return asensors[id].alarm_value;
+}
+
+static inline int16_t get_soft_temp_sensor_alarm_value(const uint8_t id)
+{
+      if(id>=N_MAX_SOFT_TEMP_SENSORS) return -INT16_MAX;
+      return ssensors_alarm_values[id];
+}
+
+static inline int8_t set_lm75a_temp_sensor_alarm_value(const uint8_t id, const int16_t alarm_value)
+{
+      if(id>=LM75A_MAX_SENSORS) return -1;
+      lsensors[id].alarm_value = alarm_value;
+      return 0;
+}
+
+static inline int8_t set_analog_temp_sensor_alarm_value(const uint8_t id, const int16_t alarm_value)
+{
+      if(id>=MAX_ANALOG_SENSORS) return -1;
+      asensors[id].alarm_value = alarm_value;
+      return 0;
+}
+
+static inline int8_t set_soft_temp_sensor_alarm_value(const uint8_t id, const int16_t alarm_value)
+{
+      if(id>=N_MAX_SOFT_TEMP_SENSORS) return -1;
+      ssensors_alarm_values[id] = alarm_value;
       return 0;
 }
 

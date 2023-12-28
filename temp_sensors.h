@@ -40,14 +40,20 @@ extern uint8_t nasensors;
 //static inline uint8_t get_analog_temp_sensor_list(void);
 //static inline int8_t add_analog_temp_sensor(const uint8_t id);
 //static inline int8_t del_analog_temp_sensor(const uint8_t id);
-//static inline int16_t get_lm75a_sensor_value(const uint8_t id);
-//static inline int16_t get_analog_sensor_value(const uint8_t id);
-//static inline int16_t get_soft_sensor_value(const uint8_t id);
+//static inline int16_t get_lm75a_temp_sensor_value(const uint8_t id);
+//static inline int16_t get_analog_temp_sensor_value(const uint8_t id);
+//static inline int16_t get_soft_temp_sensor_value(const uint8_t id);
 //static inline int8_t get_lm75a_temp_sensor_calib(const uint8_t id, int16_t* a0, int16_t* a1, int16_t* a2);
 //static inline int8_t get_analog_temp_sensor_calib(const uint8_t id, int16_t* a0, int16_t* a1, int16_t* a2);
 //static inline int8_t set_lm75a_temp_sensor_calib(const uint8_t id, const int16_t a0, const int16_t a1, const int16_t a2);
 //static inline int8_t set_analog_temp_sensor_calib(const uint8_t id, const int16_t a0, const int16_t a1, const int16_t a2);
 //static inline int8_t set_soft_temp_sensor_value(const uint8_t id, const int16_t value);
+//static inline int16_t get_lm75a_temp_sensor_alarm_value(const uint8_t id);
+//static inline int16_t get_analog_temp_sensor_alarm_value(const uint8_t id);
+//static inline int16_t get_soft_temp_sensor_alarm_value(const uint8_t id);
+//static inline int8_t set_lm75a_temp_sensor_alarm_value(const uint8_t id, const int16_t alarm_value);
+//static inline int8_t set_analog_temp_sensor_alarm_value(const uint8_t id, const int16_t alarm_value);
+//static inline int8_t set_soft_temp_sensor_alarm_value(const uint8_t id, const int16_t alarm_value);
 
 //static inline void update_temp_values(void);
 

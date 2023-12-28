@@ -16,7 +16,7 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output)
 
   if(output>0U) {
 #define FAN_VOLTAGE ((uint16_t)(fan->vnoout + (int16_t)((((int32_t)output)*fan->dvdout)>>8) + (int16_t)((((int32_t)output)*fan->d2vdout2*output)>>16)))
-    fan->level = (int16_t)(FAN_OFF_LEVEL_DEFAULT_VALUE - ((((int32_t)FAN_OFF_LEVEL_DEFAULT_VALUE)*FAN_VOLTAGE)>>14));
+    fan->level = (int16_t)(FAN_OFF_LEVEL_DEFAULT_VALUE - ((((int32_t)FAN_OFF_LEVEL_DEFAULT_VALUE)*FAN_VOLTAGE)>>FAN_MAX_VOLTAGE_SCALE_SHIFT));
     //Assertion: level <= off_level
 
     fan->duty_cycle = (uint8_t)((fan->dcnoout + (int16_t)((((int32_t)output)*fan->ddcdout)>>8) + (int16_t)((((int32_t)output)*fan->d2dcdout2*output)>>16))>>6);
@@ -51,7 +51,7 @@ int8_t set_fan_output_auto(const uint8_t id, const uint8_t output)
   if(output>0U) {
 
     if(output < fan->voltage_to_pwm_output && output >= fan->pwm_to_voltage_output) {
-      fan->level = (int16_t)(FAN_OFF_LEVEL_DEFAULT_VALUE - ((((int32_t)FAN_OFF_LEVEL_DEFAULT_VALUE)*FAN_VOLTAGE)>>14));
+      fan->level = (int16_t)(FAN_OFF_LEVEL_DEFAULT_VALUE - ((((int32_t)FAN_OFF_LEVEL_DEFAULT_VALUE)*FAN_VOLTAGE)>>FAN_MAX_VOLTAGE_SCALE_SHIFT));
       //Assertion: level <= off_level
 
       if(fan->mode & FAN_OFF_FLAG) {

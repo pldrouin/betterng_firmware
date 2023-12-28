@@ -102,10 +102,7 @@ static inline int eeprom_load(void)
 
   version=eeprom_read_byte((uint8_t*)0)|(eeprom_read_byte((uint8_t*)1)<<8);
 
-  if(version != EEPROM_DATA_VERSION) {
-    buzz_signal(1000);
-    return -1;
-  }
+  if(version != EEPROM_DATA_VERSION) return -1;
 
   uint8_t i;
 
