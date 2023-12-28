@@ -158,8 +158,8 @@ sym: $(TARGET).sym
 program: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
 
-lfuse hfuse:
-	$(AVRDUDE) $(AVRDUDE_ISP_FLAGS) -U $@:r:$@
+lfuse hfuse eeprom:
+	$(AVRDUDE) $(AVRDUDE_ISP_FLAGS) -U $@:r:$@:i
 
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) --debugging \
