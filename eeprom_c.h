@@ -4,8 +4,8 @@
 #include "eeprom.h"
 #include "fan.h"
 
-#define EEPROM_DATA_VERSION (0x00)
-#define EEPROM_DATA_SIZE (5 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + (LM75A_MAX_SENSORS+MAX_ANALOG_SENSORS)*(TEMP_SENSOR_DATA_SAVED_SIZE+1)+N_MAX_SOFT_TEMP_SENSORS)
+#define EEPROM_DATA_VERSION (0x0000U)
+#define EEPROM_DATA_SIZE (5 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + (LM75A_MAX_SENSORS+MAX_ANALOG_SENSORS)*(TEMP_SENSOR_DATA_SAVED_SIZE+1)+N_MAX_SOFT_TEMP_SENSORS*2)
 
 #if EEPROM_DATA_SIZE > EEPROM_SIZE
 #error Attempting to write too much data to EEPROM!
@@ -35,7 +35,7 @@ static inline int eeprom_gentle_write_block(const void *pointer_ram, size_t eepr
 
     for(i=0; i<n; ++i) {
       uint8_t* addr=(uint8_t*)(eeprom_byte+i);
-      uint8_t value=*((uint8_t*)pointer_ram+i);
+      uint8_t value=*(((uint8_t*)pointer_ram)+i);
 
       if(eeprom_read_byte(addr) != value) eeprom_write_byte(addr, value);
 
@@ -46,7 +46,7 @@ static inline int eeprom_gentle_write_block(const void *pointer_ram, size_t eepr
 
     for(i=0; i<n; ++i) {
       uint8_t* addr=(uint8_t*)(eeprom_byte+i);
-      uint8_t value=*((uint8_t*)pointer_ram+i);
+      uint8_t value=*(((uint8_t*)pointer_ram)+i);
 
       if(eeprom_read_byte(addr) != value) eeprom_write_byte(addr, value);
 
@@ -56,7 +56,7 @@ static inline int eeprom_gentle_write_block(const void *pointer_ram, size_t eepr
   } else {
 
     for(i=eeprom_byte; i<EEPROM_FREE_SPACE_START; ++i) {
-      uint8_t value=*((uint8_t*)pointer_ram+i-eeprom_byte);
+      uint8_t value=*(((uint8_t*)pointer_ram)+i-eeprom_byte);
 
       if(eeprom_read_byte((uint8_t*)i) != value) eeprom_write_byte((uint8_t*)i, value);
 
@@ -65,7 +65,7 @@ static inline int eeprom_gentle_write_block(const void *pointer_ram, size_t eepr
 
     for(i=EEPROM_FREE_SPACE_START-eeprom_byte; i<n; ++i) {
       size_t j=EEPROM_FREE_SPACE_OVER+i;
-      uint8_t value=*((uint8_t*)pointer_ram+i);
+      uint8_t value=*(((uint8_t*)pointer_ram)+i);
 
       if(eeprom_read_byte((uint8_t*)j) != value) eeprom_write_byte((uint8_t*)j, value);
 
@@ -107,9 +107,12 @@ static inline int eeprom_load(void)
   uint8_t i;
 
   for(i=0; i<N_MAX_FANS; ++i) {
-    eeprom_gentle_read_block(fans+i, (2 + i*FAN_DATA_SAVED_SIZE), FAN_DATA_SAVED_SIZE);
+    struct fan* fan=fans+i;
+    eeprom_gentle_read_block(fan, (2 + i*FAN_DATA_SAVED_SIZE), FAN_DATA_SAVED_SIZE);
 
-    if(!(fans[i].mode&FAN_AUTO_FLAG)) set_fan_output(i, fans[i].output);
+    if(!(fan->mode&FAN_AUTO_FLAG)) set_fan_output(i, fan->output);
+    
+    else set_fan_output_auto(i, fan->curve_outputs[fan->ncurvepoints-1]);
   }
 
   nfans = eeprom_gentle_read_byte((uint8_t*)(2 + N_MAX_FANS*FAN_DATA_SAVED_SIZE));

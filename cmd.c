@@ -50,6 +50,9 @@ void get_fan_curve_point_cmd(struct cmd* const cmd);
 
 void get_fan_tach_ticks_cmd(struct cmd* const cmd);
 
+void get_fan_hysterisis_cmd(struct cmd* const cmd);
+void set_fan_hysterisis_cmd(struct cmd* const cmd);
+
 void get_fan_mode_cmd(struct cmd* const cmd);
 void switch_fan_control_cmd(struct cmd* const cmd);
 void get_fan_adc_value_cmd(struct cmd* const cmd);
@@ -285,45 +288,45 @@ const __flash struct input_cmd input_cmds[] = {
     {0,0}, //201
     {0,0}, //202
     {0,0}, //203
-    {0,0}, //204
-    {0,0}, //205
-    {add_lm75a_temp_sensor_cmd,1}, //206
-    {del_lm75a_temp_sensor_cmd,1}, //207
-    {get_lm75a_temp_sensor_list_cmd,0}, //208
-    {add_analog_temp_sensor_cmd,1}, //209
-    {del_analog_temp_sensor_cmd,1}, //210
-    {get_analog_temp_sensor_list_cmd,0}, //211
-    {get_lm75a_temp_sensor_value_cmd,1}, //212
-    {get_analog_temp_sensor_value_cmd,1}, //213
-    {get_soft_temp_sensor_value_cmd,1}, //214
-    {get_lm75a_temp_sensor_calib_cmd,1}, //215
-    {get_analog_temp_sensor_calib_cmd,1}, //216
-    {set_lm75a_temp_sensor_calib_cmd,7}, //217
-    {set_analog_temp_sensor_calib_cmd,7}, //218
-    {set_soft_temp_sensor_value_cmd,3}, //219
-    {get_lm75a_temp_sensor_alarm_value_cmd,1}, //220
-    {get_analog_temp_sensor_alarm_value_cmd,1}, //221
-    {get_soft_temp_sensor_alarm_value_cmd,1}, //222
-    {set_lm75a_temp_sensor_alarm_value_cmd,3}, //223
-    {set_analog_temp_sensor_alarm_value_cmd,3}, //224
-    {set_soft_temp_sensor_alarm_value_cmd,3}, //225
-    {add_fan_cmd,1}, //226
-    {del_fan_cmd,1}, //227
-    {get_fan_list_cmd,0}, //228
-    {add_fan_lm75a_temp_sensor_cmd,2}, //229
-    {add_fan_analog_temp_sensor_cmd,2}, //230
-    {add_fan_soft_temp_sensor_cmd,2}, //231
-    {del_fan_lm75a_temp_sensor_cmd,2}, //232
-    {del_fan_analog_temp_sensor_cmd,2}, //233
-    {del_fan_soft_temp_sensor_cmd,2}, //234
-    {get_fan_lm75a_temp_sensor_list_cmd,1}, //235
-    {get_fan_analog_temp_sensor_list_cmd,1}, //236
-    {get_fan_soft_temp_sensor_list_cmd,1}, //237
-    {add_fan_curve_point_cmd,3}, //238
-    {del_fan_curve_point_cmd,2}, //239
-    {get_fan_n_curve_points_cmd,1}, //240
-    {get_fan_curve_point_cmd,2}, //241
-    {get_fan_tach_ticks_cmd, 1}, //  242
+    {add_lm75a_temp_sensor_cmd,1}, //204
+    {del_lm75a_temp_sensor_cmd,1}, //205
+    {get_lm75a_temp_sensor_list_cmd,0}, //206
+    {add_analog_temp_sensor_cmd,1}, //207
+    {del_analog_temp_sensor_cmd,1}, //208
+    {get_analog_temp_sensor_list_cmd,0}, //209
+    {get_lm75a_temp_sensor_value_cmd,1}, //210
+    {get_analog_temp_sensor_value_cmd,1}, //211
+    {get_soft_temp_sensor_value_cmd,1}, //212
+    {get_lm75a_temp_sensor_calib_cmd,1}, //213
+    {get_analog_temp_sensor_calib_cmd,1}, //214
+    {set_lm75a_temp_sensor_calib_cmd,7}, //215
+    {set_analog_temp_sensor_calib_cmd,7}, //216
+    {set_soft_temp_sensor_value_cmd,3}, //217
+    {get_lm75a_temp_sensor_alarm_value_cmd,1}, //218
+    {get_analog_temp_sensor_alarm_value_cmd,1}, //219
+    {get_soft_temp_sensor_alarm_value_cmd,1}, //220
+    {set_lm75a_temp_sensor_alarm_value_cmd,3}, //221
+    {set_analog_temp_sensor_alarm_value_cmd,3}, //222
+    {set_soft_temp_sensor_alarm_value_cmd,3}, //223
+    {add_fan_cmd,1}, //224
+    {del_fan_cmd,1}, //225
+    {get_fan_list_cmd,0}, //226
+    {add_fan_lm75a_temp_sensor_cmd,2}, //227
+    {add_fan_analog_temp_sensor_cmd,2}, //228
+    {add_fan_soft_temp_sensor_cmd,2}, //229
+    {del_fan_lm75a_temp_sensor_cmd,2}, //230
+    {del_fan_analog_temp_sensor_cmd,2}, //231
+    {del_fan_soft_temp_sensor_cmd,2}, //232
+    {get_fan_lm75a_temp_sensor_list_cmd,1}, //233
+    {get_fan_analog_temp_sensor_list_cmd,1}, //234
+    {get_fan_soft_temp_sensor_list_cmd,1}, //235
+    {add_fan_curve_point_cmd,3}, //236
+    {del_fan_curve_point_cmd,2}, //237
+    {get_fan_n_curve_points_cmd,1}, //238
+    {get_fan_curve_point_cmd,2}, //239
+    {get_fan_tach_ticks_cmd, 1}, //  240
+    {get_fan_hysterisis_cmd, 1}, //  241
+    {set_fan_hysterisis_cmd, 2}, //  242
     {get_fan_mode_cmd, 1}, //  243
     {switch_fan_control_cmd, 2}, //244
     {get_fan_adc_value_cmd, 1}, //245
@@ -670,6 +673,21 @@ void get_fan_tach_ticks_cmd(struct cmd* const cmd)
   *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_fan_tach_ticks(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
+}
+
+void get_fan_hysterisis_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_FAN_HYSTERISIS_CMD_RESP_ID;
+  cmd->nbytes=1;
+  cmd->bytes[0]=get_fan_hysterisis(cmd->bytes[0]);
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
+void set_fan_hysterisis_cmd(struct cmd* const cmd)
+{
+  int8_t ret=set_fan_hysterisis(cmd->bytes[0], cmd->bytes[1]);
+  ack(cmd->id, ret, cmd);
 }
 
 void ack_cmd(struct cmd* const cmd)
