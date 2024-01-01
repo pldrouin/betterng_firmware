@@ -107,12 +107,8 @@ static inline int eeprom_load(void)
   uint8_t i;
 
   for(i=0; i<N_MAX_FANS; ++i) {
-    struct fan* fan=fans+i;
+    struct fan* const fan=fans+i;
     eeprom_gentle_read_block(fan, (2 + i*FAN_DATA_SAVED_SIZE), FAN_DATA_SAVED_SIZE);
-
-    if(!(fan->mode&FAN_AUTO_FLAG)) set_fan_output(i, fan->output);
-    
-    else set_fan_output_auto(i, fan->curve_outputs[fan->ncurvepoints-1]);
   }
 
   nfans = eeprom_gentle_read_byte((uint8_t*)(2 + N_MAX_FANS*FAN_DATA_SAVED_SIZE));
@@ -149,29 +145,38 @@ static inline int eeprom_save(void)
 
   for(i=0; i<N_MAX_FANS; ++i) {
     //Excludes output at first
-    if(eeprom_gentle_write_block(fans+i, (2 + i*FAN_DATA_SAVED_SIZE), FAN_DATA_SAVED_SIZE-1)) eeprom_save_exit(-3);
+    if(eeprom_gentle_write_block(fans+i, (2 + i*FAN_DATA_SAVED_SIZE), FAN_DATA_SAVED_SIZE-2)) eeprom_save_exit(-3);
     //Only saves output if custom mode
     
-    if(!(fans[i].mode&FAN_AUTO_FLAG) && eeprom_gentle_write_byte((uint8_t*)(1 + (i+1)*FAN_DATA_SAVED_SIZE), fans[i].output)) eeprom_save_exit(-4);
+    if(!(fans[i].mode&FAN_AUTO_FLAG)) {
+
+      if(eeprom_gentle_write_byte((uint8_t*)(0 + (i+1)*FAN_DATA_SAVED_SIZE), fans[i].mode&(~FAN_STARTING_FLAG))) eeprom_save_exit(-4);
+      
+      if(eeprom_gentle_write_byte((uint8_t*)(1 + (i+1)*FAN_DATA_SAVED_SIZE), fans[i].output)) eeprom_save_exit(-5);
+
+    } else {
+
+      if(eeprom_gentle_write_byte((uint8_t*)(0 + (i+1)*FAN_DATA_SAVED_SIZE), FAN_AUTO_FLAG)) eeprom_save_exit(-4);
+    }
   }
 
-  if(eeprom_gentle_write_byte((uint8_t*)(2 + N_MAX_FANS*FAN_DATA_SAVED_SIZE), nfans)) eeprom_save_exit(-5);
+  if(eeprom_gentle_write_byte((uint8_t*)(2 + N_MAX_FANS*FAN_DATA_SAVED_SIZE), nfans)) eeprom_save_exit(-6);
 
-  if(eeprom_gentle_write_block(fanlist, (3 + N_MAX_FANS*FAN_DATA_SAVED_SIZE), nfans)) eeprom_save_exit(-6);
+  if(eeprom_gentle_write_block(fanlist, (3 + N_MAX_FANS*FAN_DATA_SAVED_SIZE), nfans)) eeprom_save_exit(-7);
 
-  for(i=0; i<LM75A_MAX_SENSORS; ++i) if(eeprom_gentle_write_block(lsensors+i, (3 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + i*TEMP_SENSOR_DATA_SAVED_SIZE), TEMP_SENSOR_DATA_SAVED_SIZE)) eeprom_save_exit(-7);
+  for(i=0; i<LM75A_MAX_SENSORS; ++i) if(eeprom_gentle_write_block(lsensors+i, (3 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + i*TEMP_SENSOR_DATA_SAVED_SIZE), TEMP_SENSOR_DATA_SAVED_SIZE)) eeprom_save_exit(-8);
 
-  if(eeprom_gentle_write_byte((uint8_t*)(3 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*TEMP_SENSOR_DATA_SAVED_SIZE), nlsensors)) eeprom_save_exit(-8);
+  if(eeprom_gentle_write_byte((uint8_t*)(3 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*TEMP_SENSOR_DATA_SAVED_SIZE), nlsensors)) eeprom_save_exit(-9);
 
-  if(eeprom_gentle_write_block(lsenslist, (4 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*TEMP_SENSOR_DATA_SAVED_SIZE), nlsensors)) eeprom_save_exit(-9);
+  if(eeprom_gentle_write_block(lsenslist, (4 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*TEMP_SENSOR_DATA_SAVED_SIZE), nlsensors)) eeprom_save_exit(-10);
 
-  for(i=0; i<MAX_ANALOG_SENSORS; ++i) if(eeprom_gentle_write_block(asensors+i, (4 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*(TEMP_SENSOR_DATA_SAVED_SIZE+1) + i*TEMP_SENSOR_DATA_SAVED_SIZE), TEMP_SENSOR_DATA_SAVED_SIZE)) eeprom_save_exit(-10);
+  for(i=0; i<MAX_ANALOG_SENSORS; ++i) if(eeprom_gentle_write_block(asensors+i, (4 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*(TEMP_SENSOR_DATA_SAVED_SIZE+1) + i*TEMP_SENSOR_DATA_SAVED_SIZE), TEMP_SENSOR_DATA_SAVED_SIZE)) eeprom_save_exit(-11);
 
-  if(eeprom_gentle_write_byte((uint8_t*)(4 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*(TEMP_SENSOR_DATA_SAVED_SIZE+1) + MAX_ANALOG_SENSORS*TEMP_SENSOR_DATA_SAVED_SIZE), nasensors)) eeprom_save_exit(-11);
+  if(eeprom_gentle_write_byte((uint8_t*)(4 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*(TEMP_SENSOR_DATA_SAVED_SIZE+1) + MAX_ANALOG_SENSORS*TEMP_SENSOR_DATA_SAVED_SIZE), nasensors)) eeprom_save_exit(-12);
 
-  if(eeprom_gentle_write_block(asenslist, (5 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*(TEMP_SENSOR_DATA_SAVED_SIZE+1) + MAX_ANALOG_SENSORS*TEMP_SENSOR_DATA_SAVED_SIZE), nasensors)) eeprom_save_exit(-12);
+  if(eeprom_gentle_write_block(asenslist, (5 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + LM75A_MAX_SENSORS*(TEMP_SENSOR_DATA_SAVED_SIZE+1) + MAX_ANALOG_SENSORS*TEMP_SENSOR_DATA_SAVED_SIZE), nasensors)) eeprom_save_exit(-13);
 
-  if(eeprom_gentle_write_block(ssensors_alarm_values, (5 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + (LM75A_MAX_SENSORS+MAX_ANALOG_SENSORS)*(TEMP_SENSOR_DATA_SAVED_SIZE+1)), N_MAX_SOFT_TEMP_SENSORS*2)) eeprom_save_exit(-13);
+  if(eeprom_gentle_write_block(ssensors_alarm_values, (5 + N_MAX_FANS*(FAN_DATA_SAVED_SIZE+1) + (LM75A_MAX_SENSORS+MAX_ANALOG_SENSORS)*(TEMP_SENSOR_DATA_SAVED_SIZE+1)), N_MAX_SOFT_TEMP_SENSORS*2)) eeprom_save_exit(-14);
 
 eeprom_save_catch:
   watchdogReset();

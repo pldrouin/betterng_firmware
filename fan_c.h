@@ -42,6 +42,7 @@ static inline void initfans(void)
   uint8_t id;
 
   for(id=0U; id<N_MAX_FANS; ++id) {
+    struct fan* const fan=fans+id;
     set_fan_pin_as_input(ADC, id);
     set_fan_pin(ADC, id, false);
     set_fan_pin(DC, id, false);
@@ -53,7 +54,13 @@ static inline void initfans(void)
     set_fan_pin(RPM, id, false);
     set_fan_pin_as_output(RPM, id);
 
-    switch_fan_control(id, fans[id].mode);
+    const uint8_t loaded_mode = fan->mode;
+    fan->mode = 0;
+    switch_fan_control(id, loaded_mode);
+
+    if(!(fan->mode&FAN_AUTO_FLAG)) set_fan_output(id, fan->output);
+    
+    else set_fan_output_auto(id, fan->curve_outputs[fan->ncurvepoints-1]);
   }
 
   FAN_OUTPUT_COMPARE_REG = FAN_TIMER_ALARM;
@@ -100,7 +107,7 @@ static inline uint8_t get_fan_lm75a_temp_sensor_list(const uint8_t fan_id)
 {
   uint8_t ret=0;
   uint8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=0; i<fan->nlsensors; ++i) ret|=(1<<fan->lsenslist[i]);
   return ret;
@@ -110,7 +117,7 @@ static inline uint8_t get_fan_analog_temp_sensor_list(const uint8_t fan_id)
 {
   uint8_t ret=0;
   uint8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=0; i<fan->nasensors; ++i) ret|=(1<<fan->asenslist[i]);
   return ret;
@@ -120,7 +127,7 @@ static inline uint8_t get_fan_soft_temp_sensor_list(const uint8_t fan_id)
 {
   uint8_t ret=0;
   uint8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=0; i<fan->nssensors; ++i) ret|=(1<<fan->ssenslist[i]);
   return ret;
@@ -133,7 +140,7 @@ static inline int8_t add_fan_lm75a_temp_sensor(const uint8_t fan_id, const uint8
 
   if(sens_id>=LM75A_MAX_SENSORS) return -2;
   int8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=fan->nlsensors-1; i>=0; --i) if(fan->lsenslist[i]==sens_id) return 0;
   fan->lsenslist[fan->nlsensors]=sens_id;
@@ -147,7 +154,7 @@ static inline int8_t add_fan_analog_temp_sensor(const uint8_t fan_id, const uint
 
   if(sens_id>=MAX_ANALOG_SENSORS) return -2;
   int8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=fan->nasensors-1; i>=0; --i) if(fan->asenslist[i]==sens_id) return 0;
   fan->asenslist[fan->nasensors]=sens_id;
@@ -161,7 +168,7 @@ static inline int8_t add_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_
 
   if(sens_id>=N_MAX_SOFT_TEMP_SENSORS) return -2;
   int8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=fan->nssensors-1; i>=0; --i) if(fan->ssenslist[i]==sens_id) return 0;
   fan->ssenslist[fan->nssensors]=sens_id;
@@ -173,7 +180,7 @@ static inline int8_t del_fan_lm75a_temp_sensor(const uint8_t fan_id, const uint8
 {
   if(fan_id>=N_MAX_FANS) return -1;
   int8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=fan->nlsensors-1; i>=0; --i) if(fan->lsenslist[i]==sens_id) break;
 
@@ -188,7 +195,7 @@ static inline int8_t del_fan_analog_temp_sensor(const uint8_t fan_id, const uint
 {
   if(fan_id>=N_MAX_FANS) return -1;
   int8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=fan->nasensors-1; i>=0; --i) if(fan->asenslist[i]==sens_id) break;
 
@@ -203,7 +210,7 @@ static inline int8_t del_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_
 {
   if(fan_id>=N_MAX_FANS) return -1;
   int8_t i;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   for(i=fan->nssensors-1; i>=0; --i) if(fan->ssenslist[i]==sens_id) break;
 
@@ -217,7 +224,7 @@ static inline int8_t del_fan_soft_temp_sensor(const uint8_t fan_id, const uint8_
 static inline int8_t add_fan_curve_point(const uint8_t fan_id, const int8_t temp, const uint8_t output)
 {
   if(fan_id>=N_MAX_FANS) return -1;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   if(fan->ncurvepoints==MAX_CURVE_NPOINTS) return -2;
   uint8_t i=binary_search(temp, fan->curve_temps, fan->ncurvepoints);
@@ -241,7 +248,7 @@ static inline int8_t add_fan_curve_point(const uint8_t fan_id, const int8_t temp
 static inline int8_t del_fan_curve_point(const uint8_t fan_id, const uint8_t index)
 {
   if(fan_id>=N_MAX_FANS) return -1;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   if(index>=fan->ncurvepoints) return -2;
 
@@ -264,7 +271,7 @@ static inline int8_t get_fan_n_curve_points(const uint8_t fan_id)
 static inline int8_t get_fan_curve_point(const uint8_t fan_id, const uint8_t index, int8_t* const temp, uint8_t* const output)
 {
   if(fan_id>=N_MAX_FANS) return -1;
-  struct fan* fan=fans+fan_id;
+  struct fan* const fan=fans+fan_id;
 
   if(index>=fan->ncurvepoints) return -2;
   *temp=fan->curve_temps[index];
@@ -387,13 +394,12 @@ static inline void update_fans(void)
 
   uint8_t id;
   int8_t s;
-  struct fan* fan;
   int8_t temp, maxtemp=INT8_MIN;
   update_temp_values();
 
   for(index=nfans-1; index>=0; --index) {
     id=fanlist[index];
-    fan=fans+id;
+    struct fan* const fan=fans+id;
 
     if(fan->prev_tach_ticks==-INT16_MAX) {
       switch_fan_control(id, FAN_DISABLED_MODE);
