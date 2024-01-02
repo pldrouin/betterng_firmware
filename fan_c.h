@@ -24,6 +24,8 @@ static inline void initfan_data(void)
     fan->nasensors=0U;
     fan->nssensors=0U;
     fan->last_temp=LAST_TEMP_INVALID_VALUE;
+    fan->min_tach_ticks=FAN_MIN_PREV_TACH_TICKS_DEFAULT_VALUE;
+    fan->max_tach_ticks=FAN_MAX_PREV_TACH_TICKS_DEFAULT_VALUE;
     fan->hysterisis=0U;
     fan->curve_temps[0]=0;
     fan->curve_outputs[0]=UINT8_MAX;
@@ -56,7 +58,7 @@ static inline void initfans(void)
 
     const uint8_t loaded_mode = fan->mode;
     fan->mode = 0;
-    switch_fan_control(id, loaded_mode);
+    switch_fan_mode(id, loaded_mode);
 
     if(!(fan->mode&FAN_AUTO_FLAG)) set_fan_output(id, fan->output);
     
@@ -343,7 +345,7 @@ static inline int8_t set_fan_mode_transitions(const uint8_t id, const uint8_t pw
   return 0;
 }
 
-static inline uint8_t get_fan_adc_value(const uint8_t id)
+static inline uint16_t get_fan_adc_value(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return 0;
   return adc_getValue(id);
@@ -361,12 +363,6 @@ static inline uint8_t get_fan_mode(const uint8_t id)
   return fans[id].mode;
 }
 
-static inline int16_t get_fan_tach_ticks(const uint8_t id)
-{
-  if(id>=N_MAX_FANS) return INT16_MAX;
-  return fans[id].prev_tach_ticks;
-}
-
 static inline uint8_t get_fan_hysterisis(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return UINT8_MAX;
@@ -380,13 +376,45 @@ static inline int8_t set_fan_hysterisis(const uint8_t id, const uint8_t hysteris
   return 0;
 }
 
+static inline int16_t get_fan_min_tach_ticks(const uint8_t id)
+{
+  if(id>=N_MAX_FANS) return 0;
+  return fans[id].min_tach_ticks;
+}
+
+static inline int8_t set_fan_min_tach_ticks(const uint8_t id, const int16_t min_tach_ticks)
+{
+  if(id>=N_MAX_FANS) return -1;
+  fans[id].min_tach_ticks = min_tach_ticks;
+  return 0;
+}
+
+static inline int16_t get_fan_max_tach_ticks(const uint8_t id)
+{
+  if(id>=N_MAX_FANS) return 0;
+  return fans[id].max_tach_ticks;
+}
+
+static inline int8_t set_fan_max_tach_ticks(const uint8_t id, const int16_t max_tach_ticks)
+{
+  if(id>=N_MAX_FANS) return -1;
+  fans[id].max_tach_ticks = max_tach_ticks;
+  return 0;
+}
+
+static inline int16_t get_fan_tach_ticks(const uint8_t id)
+{
+  if(id>=N_MAX_FANS) return INT16_MAX;
+  return fans[id].prev_tach_ticks;
+}
+
 static inline void update_fans(void)
 {
   int8_t index;
 
   if(!overtemp_pass()) {
 
-    for(index=N_MAX_FANS-1; index>=0; --index) switch_fan_control(index, FAN_DISABLED_MODE);
+    for(index=N_MAX_FANS-1; index>=0; --index) switch_fan_mode(index, FAN_DISABLED_MODE);
     device_overtemp_cmd();
     request_buzz_alarm();
     return;
@@ -394,7 +422,6 @@ static inline void update_fans(void)
 
   uint8_t id;
   int8_t s;
-  int8_t temp, maxtemp=INT8_MIN;
   update_temp_values();
 
   for(index=nfans-1; index>=0; --index) {
@@ -402,66 +429,75 @@ static inline void update_fans(void)
     struct fan* const fan=fans+id;
 
     if(fan->prev_tach_ticks==-INT16_MAX) {
-      switch_fan_control(id, FAN_DISABLED_MODE);
+      switch_fan_mode(id, FAN_DISABLED_MODE);
       request_buzz_alarm();
 
-    } else if((fan->mode&FAN_STARTING_FLAG) && fan->prev_tach_ticks!=INT16_MAX) {
-      switch_fan_control(id, fan->mode&(~FAN_STARTING_FLAG));
     }
 
+    //If auto mode
     if((fan->mode&FAN_AUTO_FLAG) != 0) {
 
-      for(s=fan->nlsensors-1; s>=0; --s) {
-	temp = (lsensors[fan->lsenslist[s]].value>>8);
+      if(!((fan->mode&FAN_STARTING_FLAG) && abs(fan->prev_tach_ticks) > fan->max_tach_ticks)) {
+	int8_t maxtemp=INT8_MIN;
 
-	if(temp > maxtemp) maxtemp=temp;
-      }
+	for(s=fan->nlsensors-1; s>=0; --s) {
+	  int8_t temp = (lsensors[fan->lsenslist[s]].value>>8);
 
-      for(s=fan->nasensors-1; s>=0; --s) {
-	temp = (asensors[fan->asenslist[s]].value>>8);
+	  if(temp > maxtemp) maxtemp=temp;
+	}
 
-	if(temp > maxtemp) maxtemp=temp;
-      }
+	for(s=fan->nasensors-1; s>=0; --s) {
+	  int8_t temp = (asensors[fan->asenslist[s]].value>>8);
 
-      for(s=fan->nssensors-1; s>=0; --s) {
-	temp = (ssensors_values[fan->ssenslist[s]]>>8);
+	  if(temp > maxtemp) maxtemp=temp;
+	}
 
-	if(temp > maxtemp) maxtemp=temp;
-      }
+	for(s=fan->nssensors-1; s>=0; --s) {
+	  int8_t temp = (ssensors_values[fan->ssenslist[s]]>>8);
 
-      if(maxtemp == INT8_MIN) {
-	set_fan_output_auto(id, fan->curve_outputs[fan->ncurvepoints-1]);
-	fan->last_temp = LAST_TEMP_INVALID_VALUE;
+	  if(temp > maxtemp) maxtemp=temp;
+	}
 
-      } else {
+	if(maxtemp == INT8_MIN) {
+	  set_fan_output_auto(id, fan->curve_outputs[fan->ncurvepoints-1]);
+	  fan->last_temp = LAST_TEMP_INVALID_VALUE;
 
-	if(abs(maxtemp - fan->last_temp) > fan->hysterisis) {
-	  fan->last_temp = maxtemp;
+	} else {
 
-	  if(maxtemp >= fan->curve_temps[fan->ncurvepoints-1]) set_fan_output_auto(id, fan->curve_outputs[fan->ncurvepoints-1]); 
+	  if(abs(maxtemp - fan->last_temp) > fan->hysterisis) {
+	    fan->last_temp = maxtemp;
 
-	  else if(maxtemp <= fan->curve_temps[0]) set_fan_output_auto(id, fan->curve_outputs[0]);
+	    if(maxtemp >= fan->curve_temps[fan->ncurvepoints-1]) set_fan_output_auto(id, fan->curve_outputs[fan->ncurvepoints-1]); 
 
-	  else {
-	    uint8_t ret=1;
-	    uint8_t diff=fan->ncurvepoints-2;
-	    uint8_t mid;
-	    uint8_t hdiff;
+	    else if(maxtemp <= fan->curve_temps[0]) set_fan_output_auto(id, fan->curve_outputs[0]);
 
-	    while(diff>0) {
-	      hdiff=diff>>1;
-	      mid=ret+hdiff;
+	    else {
+	      uint8_t ret=1;
+	      uint8_t diff=fan->ncurvepoints-2;
+	      uint8_t mid;
+	      uint8_t hdiff;
 
-	      if(maxtemp>=fan->curve_temps[mid]) {
-		ret=++mid;
-		diff-=hdiff+1;
+	      while(diff>0) {
+		hdiff=diff>>1;
+		mid=ret+hdiff;
 
-	      } else diff=hdiff;
+		if(maxtemp>=fan->curve_temps[mid]) {
+		  ret=++mid;
+		  diff-=hdiff+1;
+
+		} else diff=hdiff;
+	      }
+	      set_fan_output_auto(id, (uint8_t)(fan->curve_outputs[ret-1]+((int16_t)fan->curve_outputs[ret]-fan->curve_outputs[ret-1])*(maxtemp-fan->curve_temps[ret-1])/(fan->curve_temps[ret]-fan->curve_temps[ret-1])));
 	    }
-	    set_fan_output_auto(id, (uint8_t)(fan->curve_outputs[ret-1]+((int16_t)fan->curve_outputs[ret]-fan->curve_outputs[ret-1])*(maxtemp-fan->curve_temps[ret-1])/(fan->curve_temps[ret]-fan->curve_temps[ret-1])));
 	  }
 	}
-      }
+
+      } else fan->last_temp=LAST_TEMP_INVALID_VALUE;
+
+      //Else if not auto mode
+    } else {
+
+      if((fan->mode&FAN_STARTING_FLAG) && abs(fan->prev_tach_ticks) <= fan->max_tach_ticks) switch_fan_mode(id, fan->mode&(~FAN_STARTING_FLAG));
     }
   }
 }

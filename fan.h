@@ -46,7 +46,7 @@
 
 enum {FAN_LAST_TACH_UP=1U, FAN_LAST_POWER_UP=2U, FAN_TACH_ACCURATE_RPM=4U};
 
-#define FAN_DATA_SAVED_SIZE (21+LM75A_MAX_SENSORS+MAX_ANALOG_SENSORS+N_MAX_SOFT_TEMP_SENSORS+2*MAX_CURVE_NPOINTS)
+#define FAN_DATA_SAVED_SIZE (25+LM75A_MAX_SENSORS+MAX_ANALOG_SENSORS+N_MAX_SOFT_TEMP_SENSORS+2*MAX_CURVE_NPOINTS)
 
 struct fan
 {
@@ -56,6 +56,8 @@ struct fan
   uint16_t dcnoout;    //PWM duty cycle when fan stops * 64
   int16_t ddcdout;     //PWM duty cycle derivative * max output (255) * 64
   int16_t d2dcdout2;   //PWM second duty cycle derivative * max output * max output * 64
+  int16_t min_tach_ticks;   //Minimum valid value for the number of tach ticks (to be set using maximum rpm)
+  int16_t max_tach_ticks;   //Maximum valid value for the number of tach ticks (to be set using minimum rpm)
   uint8_t hysterisis;
   uint8_t lsenslist[LM75A_MAX_SENSORS];
   uint8_t nlsensors;
@@ -111,14 +113,17 @@ extern uint8_t nfans;
 //static inline int8_t set_fan_voltage_response(const uint8_t id, const uint16_t v_no_out, const int16_t dvdout, const int16_t d2vdout2);
 //static inline int8_t get_fan_mode_transitions(const uint8_t id, uint8_t* const pwm_to_voltage_output, uint8_t* const voltage_to_pwm_output);
 //static inline int8_t set_fan_mode_transitions(const uint8_t id, const uint8_t pwm_to_voltage_output, const uint8_t voltage_to_pwm_output);
-//static inline uint8_t get_fan_adc_value(const uint8_t id);
+//static inline uint16_t get_fan_adc_value(const uint8_t id);
 //static inline uint8_t get_fan_output(const uint8_t id);
 int8_t set_fan_output(const uint8_t id, const uint8_t output);
 int8_t set_fan_output_auto(const uint8_t id, const uint8_t output);
 //static inline uint8_t get_fan_mode(const uint8_t id);
-int8_t switch_fan_control(const uint8_t id, const uint8_t mode);
-//static inline uint8_t get_fan_hysterisis(const uint8_t id);
-//static inline int8_t set_fan_hysterisis(const uint8_t id, const uint8_t hysterisis);
+int8_t switch_fan_mode(const uint8_t id, const uint8_t mode);
+//static inline uint8_t get_fan_hyst//static inline int8_t set_fan_hysterisis(const uint8_t id, const uint8_t hysterisis);
+//static inline int16_t get_fan_min_tach_ticks(const uint8_t id);
+//static inline int8_t set_fan_min_tach_ticks(const uint8_t id, const int16_t min_tach_ticks);
+//static inline int16_t get_fan_max_tach_ticks(const uint8_t id);
+//static inline int8_t set_fan_max_tach_ticks(const uint8_t id, const int16_t max_tach_ticks);
 //static inline int16_t get_fan_tach_ticks(const uint8_t id);
 //static inline void update_fans(void);
 

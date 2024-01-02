@@ -64,7 +64,7 @@ static inline int eeprom_gentle_write_block(const void *pointer_ram, size_t eepr
     }
 
     for(i=EEPROM_FREE_SPACE_START-eeprom_byte; i<n; ++i) {
-      size_t j=EEPROM_FREE_SPACE_OVER+i;
+      size_t j=i+eeprom_byte+EEPROM_FREE_SPACE;
       uint8_t value=*(((uint8_t*)pointer_ram)+i);
 
       if(eeprom_read_byte((uint8_t*)j) != value) eeprom_write_byte((uint8_t*)j, value);

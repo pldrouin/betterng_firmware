@@ -11,7 +11,7 @@ ISR(ADC_INTR_FUNC)
 
   //Fan control in DC mode. Makes the most sense to have it in sync with ADC
   //readings.
-  if(cur_adc_channel < N_MAX_FANS && (fans[cur_adc_channel].mode&FAN_MODE_MASK) == FAN_VOLTAGE_MODE) {
+  if(cur_adc_channel < N_MAX_FANS && (fans[cur_adc_channel].mode&(FAN_MODE_MASK|FAN_STARTING_FLAG)) == FAN_VOLTAGE_MODE) {
 
     if(adc_values[cur_adc_channel] > fans[cur_adc_channel].level) set_fan_pin(DC, cur_adc_channel, true);
 

@@ -23,6 +23,7 @@ int8_t set_fan_output(const uint8_t id, const uint8_t output)
 
     if(fan->mode & FAN_OFF_FLAG) {
       fan->prev_tach_ticks=INT16_MAX;
+      fan->last_fan_status=0;
       fan->cur_tach_ticks = 1;
       fan->prev_tach_osc = 0;
       fan->mode = (fan->mode&(~FAN_OFF_FLAG))|FAN_STARTING_FLAG;
@@ -56,12 +57,13 @@ int8_t set_fan_output_auto(const uint8_t id, const uint8_t output)
 
       if(fan->mode & FAN_OFF_FLAG) {
         fan->prev_tach_ticks=INT16_MAX;
+        fan->last_fan_status=0;
 	fan->cur_tach_ticks = 1;
 	fan->prev_tach_osc = 0;
 	set_fan_pin(PWM, id, true);
 	fan->mode = (fan->mode&(~FAN_OFF_FLAG))|FAN_STARTING_FLAG;
 
-      } else switch_fan_control(id, FAN_VOLTAGE_MODE|FAN_AUTO_FLAG);
+      } else switch_fan_mode(id, FAN_VOLTAGE_MODE|FAN_AUTO_FLAG);
 
     } else {
 
@@ -69,12 +71,13 @@ int8_t set_fan_output_auto(const uint8_t id, const uint8_t output)
 
       if(fan->mode & FAN_OFF_FLAG) {
         fan->prev_tach_ticks=INT16_MAX;
+        fan->last_fan_status=0;
 	fan->cur_tach_ticks = 1;
 	fan->prev_tach_osc = 0;
 	set_fan_pin(PWM, id, true);
 	fan->mode = (fan->mode&(~FAN_OFF_FLAG))|FAN_STARTING_FLAG;
 
-      } else switch_fan_control(id, FAN_PWM_MODE|FAN_AUTO_FLAG);
+      } else switch_fan_mode(id, FAN_PWM_MODE|FAN_AUTO_FLAG);
     }
 
   //Completely turn off fan if desired output level is 0
@@ -90,7 +93,7 @@ int8_t set_fan_output_auto(const uint8_t id, const uint8_t output)
   return 0;
 }
 
-int8_t switch_fan_control(const uint8_t id, uint8_t mode)
+int8_t switch_fan_mode(const uint8_t id, uint8_t mode)
 {
   if(id>=N_MAX_FANS) return -1;
 
@@ -178,9 +181,13 @@ ISR(TIMER2_COMP_vect)
 	  //Else if the power was previously active, then the end of the tach signal is accurate
 	} else {
 
-	  if(fan->last_fan_status&FAN_TACH_ACCURATE_RPM) fan->prev_tach_ticks = fan->cur_tach_ticks / (fan->prev_tach_osc + 1);
+	  if(fan->last_fan_status&FAN_TACH_ACCURATE_RPM) {
+	    const int16_t nptt = fan->cur_tach_ticks / (fan->prev_tach_osc + 1);
 
-	  else fan->prev_tach_ticks = -(int16_t)(fan->cur_tach_ticks / (fan->prev_tach_osc + 1));
+	    if(nptt > fan->min_tach_ticks) fan->prev_tach_ticks = fan->cur_tach_ticks / (fan->prev_tach_osc + 1);
+
+	  } else if(fan->prev_tach_ticks != INT16_MAX) fan->prev_tach_ticks = -(int16_t)(fan->cur_tach_ticks / (fan->prev_tach_osc + 1));
+
 	  fan->cur_tach_ticks = 1;
 	  fan->prev_tach_osc = 0;
 	  fan->last_fan_status = ((uint8_t)cur_tach_status) | FAN_LAST_POWER_UP | FAN_TACH_ACCURATE_RPM;
@@ -217,7 +224,7 @@ ISR(TIMER2_COMP_vect)
     }
 
     //If fan is running in PWM mode
-    if((fan->mode&FAN_MODE_MASK) == FAN_PWM_MODE) {
+    if((fan->mode&(FAN_MODE_MASK|FAN_STARTING_FLAG)) == FAN_PWM_MODE) {
 
       if((uint8_t)(++pwm_counter+fan->pwm_counter_offset) > fan->duty_cycle) set_fan_pin(PWM, id, false);
 
