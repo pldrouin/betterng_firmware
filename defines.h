@@ -193,6 +193,12 @@ static inline void watchdogConfig(uint8_t x)
 #define FAN_TIMER_INTR_MASK_REG			TIMSK	
 #define FAN_TIMER_ENABLE_COMPARE_MATCH_INTR	OCIE2	
 
+#define N_MAX_ANALOG		4U
+
+#define ANALOG_ADC_DDR	DDRA
+#define ANALOG_ADC_PORT	PORTA
+#define ANALOG_ADC_FIRST_NO	N_MAX_FANS
+
 #define BUZZ_DDR        DDRD
 #define BUZZ_PORT       PORTD
 #define BUZZ_PIN        PIND

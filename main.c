@@ -42,8 +42,9 @@ int main(void)
     set_pin_as_output(MCU_LED); //Set buzzer pin as an output
 
     int ret=eeprom_load();
+    initanalog(); //Initialize analog sensor pins
     initfans(); //Initialize fans.
-    initadc(); // Initialize UART.
+    initadc(); //Initialize UART.
     sei();
 
     if(ret) {

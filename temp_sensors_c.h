@@ -223,7 +223,7 @@ static inline void update_temp_values(void)
   }
 
   for(i=0; i<nasensors; ++i) {
-    const uint8_t id=lsenslist[i];
+    const uint8_t id=asenslist[i];
     value=analog_sensor_getValue(id);
     struct temp_sensor* const sens=asensors+id;
     sens->value=sens->a0 + ((((int32_t)value)*(sens->a1 + ((((int32_t)value) * sens->a2)>>14)))>>14);
