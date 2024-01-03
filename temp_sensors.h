@@ -9,10 +9,15 @@
 
 #define TEMP_SENSOR_INVALID_VALUE	32767L
 
-#define LM75A_TEMP_SENSOR_DATA_SAVED_SIZE (2*4)
-#define ANALOG_TEMP_SENSOR_DATA_SAVED_SIZE (4*3+2+2)
+#define ANALOG_SENSOR_DEFAULT_A0_VALUE (6.65105805949316E-06)
+#define ANALOG_SENSOR_DEFAULT_A1_VALUE (8.1338284535818E-07)
+#define ANALOG_SENSOR_DEFAULT_A2_VALUE (4.20385254613906E-08)
+#define ANALOG_SENSOR_DEFAULT_SHIFT_VALUE (0)
 
-#define TEMP_SENSOR_DEFAULT_ALARM_VALUE (80<<8)
+#define LM75A_TEMP_SENSOR_DATA_SAVED_SIZE (2*4)
+#define ANALOG_TEMP_SENSOR_DATA_SAVED_SIZE (4*3+2*2)
+
+#define TEMP_SENSOR_DEFAULT_ALARM_VALUE (20480L)
 
 struct lm75a_temp_sensor
 {
@@ -26,8 +31,8 @@ struct lm75a_temp_sensor
 struct analog_temp_sensor
 {
   float a0;
-  float a1; //Units are 2^-14
-  float a2; //Units are 2^-28
+  float a1;
+  float a2;
   int16_t shift;
   int16_t alarm_value;
   int16_t value;

@@ -16,9 +16,10 @@ static inline void init_temp_sensor_data(void)
 
   for(i=0; i<MAX_ANALOG_SENSORS; ++i) {
     struct analog_temp_sensor* const sens=asensors+i;
-    sens->a2=0;
-    sens->a1=(1<<14);
-    sens->a0=0;
+    sens->shift=ANALOG_SENSOR_DEFAULT_SHIFT_VALUE;
+    sens->a2=ANALOG_SENSOR_DEFAULT_A2_VALUE;
+    sens->a1=ANALOG_SENSOR_DEFAULT_A1_VALUE;
+    sens->a0=ANALOG_SENSOR_DEFAULT_A0_VALUE;
     sens->alarm_value=TEMP_SENSOR_DEFAULT_ALARM_VALUE;
     sens->value=TEMP_SENSOR_INVALID_VALUE;
   }
@@ -96,9 +97,10 @@ static inline int8_t add_analog_temp_sensor(const uint8_t id)
 
   asenslist[nasensors]=id;
   struct analog_temp_sensor* sens=asensors+id;
-  sens->a2=0;
-  sens->a1=(1<<14);
-  sens->a0=0;
+  sens->shift=ANALOG_SENSOR_DEFAULT_SHIFT_VALUE;
+  sens->a2=ANALOG_SENSOR_DEFAULT_A2_VALUE;
+  sens->a1=ANALOG_SENSOR_DEFAULT_A1_VALUE;
+  sens->a0=ANALOG_SENSOR_DEFAULT_A0_VALUE;
   sens->alarm_value=TEMP_SENSOR_DEFAULT_ALARM_VALUE;
   sens->value=TEMP_SENSOR_INVALID_VALUE;
   ++nasensors;

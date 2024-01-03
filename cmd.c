@@ -301,7 +301,7 @@ const __flash struct input_cmd input_cmds[] = {
     {get_analog_temp_sensor_calib0_cmd,1}, //208
     {get_analog_temp_sensor_calib1_cmd,1}, //209
     {set_lm75a_temp_sensor_calib_cmd,7}, //210
-    {set_analog_temp_sensor_calib0_cmd,7}, //211
+    {set_analog_temp_sensor_calib0_cmd,9}, //211
     {set_analog_temp_sensor_calib1_cmd,7}, //212
     {set_soft_temp_sensor_value_cmd,3}, //213
     {get_lm75a_temp_sensor_alarm_value_cmd,1}, //214
@@ -517,16 +517,22 @@ void set_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd)
 
 void set_analog_temp_sensor_calib0_cmd(struct cmd* const cmd)
 {
-  uint32_t ua0=(((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+1)))<<16|be16toh(*(uint16_t*)(cmd->bytes+3)));
-  uint32_t ua1=(((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+5)))<<16|be16toh(*(uint16_t*)(cmd->bytes+7)));
-  int8_t ret=set_analog_temp_sensor_calib0(cmd->bytes[0], *(uint32_t*)&ua0, *(uint32_t*)&ua1);
+  uint32_t ua0=(((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+1)))<<16)|be16toh(*(uint16_t*)(cmd->bytes+3));
+  uint32_t ua1=(((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+5)))<<16)|be16toh(*(uint16_t*)(cmd->bytes+7));
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+  int8_t ret=set_analog_temp_sensor_calib0(cmd->bytes[0], *(float*)&ua0, *(float*)&ua1);
+  #pragma GCC diagnostic pop
   ack(cmd->id, ret, cmd);
 }
 
 void set_analog_temp_sensor_calib1_cmd(struct cmd* const cmd)
 {
-  uint32_t ua2=(((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+1)))<<16|be16toh(*(uint16_t*)(cmd->bytes+3)));
-  int8_t ret=set_analog_temp_sensor_calib1(cmd->bytes[0], *(uint32_t*)&ua2, (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
+  uint32_t ua2=((((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+1)))<<16)|be16toh(*(uint16_t*)(cmd->bytes+3)));
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+  int8_t ret=set_analog_temp_sensor_calib1(cmd->bytes[0], *(float*)&ua2, (int16_t)be16toh(*(uint16_t*)(cmd->bytes+5)));
+  #pragma GCC diagnostic pop
   ack(cmd->id, ret, cmd);
 }
 

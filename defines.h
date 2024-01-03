@@ -214,7 +214,7 @@ static inline void watchdogConfig(uint8_t x)
 #define MCU_LED_NO         PD7
 
 #define htole16(value) (value)
-#define htobe16(value) (value<<8|(value&0xFF))
+#define htobe16(value) ((value<<8)|(value>>8))
 #define le16toh(value) (value)
 #define be16toh(value) ((value<<8)|(value>>8))
 
