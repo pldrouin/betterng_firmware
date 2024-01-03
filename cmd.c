@@ -20,9 +20,11 @@ void get_lm75a_temp_sensor_value_cmd(struct cmd* const cmd);
 void get_analog_temp_sensor_value_cmd(struct cmd* const cmd);
 void get_soft_temp_sensor_value_cmd(struct cmd* const cmd);
 void get_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd);
-void get_analog_temp_sensor_calib_cmd(struct cmd* const cmd);
+void get_analog_temp_sensor_calib0_cmd(struct cmd* const cmd);
+void get_analog_temp_sensor_calib1_cmd(struct cmd* const cmd);
 void set_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd);
-void set_analog_temp_sensor_calib_cmd(struct cmd* const cmd);
+void set_analog_temp_sensor_calib0_cmd(struct cmd* const cmd);
+void set_analog_temp_sensor_calib1_cmd(struct cmd* const cmd);
 void set_soft_temp_sensor_value_cmd(struct cmd* const cmd);
 void get_lm75a_temp_sensor_alarm_value_cmd(struct cmd* const cmd);
 void get_analog_temp_sensor_alarm_value_cmd(struct cmd* const cmd);
@@ -286,21 +288,21 @@ const __flash struct input_cmd input_cmds[] = {
     {0,0}, //195
     {0,0}, //196
     {0,0}, //197
-    {0,0}, //198
-    {0,0}, //199
-    {add_lm75a_temp_sensor_cmd,1}, //200
-    {del_lm75a_temp_sensor_cmd,1}, //201
-    {get_lm75a_temp_sensor_list_cmd,0}, //202
-    {add_analog_temp_sensor_cmd,1}, //203
-    {del_analog_temp_sensor_cmd,1}, //204
-    {get_analog_temp_sensor_list_cmd,0}, //205
-    {get_lm75a_temp_sensor_value_cmd,1}, //206
-    {get_analog_temp_sensor_value_cmd,1}, //207
-    {get_soft_temp_sensor_value_cmd,1}, //208
-    {get_lm75a_temp_sensor_calib_cmd,1}, //209
-    {get_analog_temp_sensor_calib_cmd,1}, //210
-    {set_lm75a_temp_sensor_calib_cmd,7}, //211
-    {set_analog_temp_sensor_calib_cmd,7}, //212
+    {add_lm75a_temp_sensor_cmd,1}, //198
+    {del_lm75a_temp_sensor_cmd,1}, //199
+    {get_lm75a_temp_sensor_list_cmd,0}, //200
+    {add_analog_temp_sensor_cmd,1}, //201
+    {del_analog_temp_sensor_cmd,1}, //202
+    {get_analog_temp_sensor_list_cmd,0}, //203
+    {get_lm75a_temp_sensor_value_cmd,1}, //204
+    {get_analog_temp_sensor_value_cmd,1}, //205
+    {get_soft_temp_sensor_value_cmd,1}, //206
+    {get_lm75a_temp_sensor_calib_cmd,1}, //207
+    {get_analog_temp_sensor_calib0_cmd,1}, //208
+    {get_analog_temp_sensor_calib1_cmd,1}, //209
+    {set_lm75a_temp_sensor_calib_cmd,7}, //210
+    {set_analog_temp_sensor_calib0_cmd,7}, //211
+    {set_analog_temp_sensor_calib1_cmd,7}, //212
     {set_soft_temp_sensor_value_cmd,3}, //213
     {get_lm75a_temp_sensor_alarm_value_cmd,1}, //214
     {get_analog_temp_sensor_alarm_value_cmd,1}, //215
@@ -469,18 +471,39 @@ void get_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd)
   send_cmd(cmd);
 }
 
-void get_analog_temp_sensor_calib_cmd(struct cmd* const cmd)
+void get_analog_temp_sensor_calib0_cmd(struct cmd* const cmd)
 {
-  cmd->id=GET_ANALOG_TEMP_SENSOR_CALIB_CMD_RESP_ID;
+  cmd->id=GET_ANALOG_TEMP_SENSOR_CALIB0_CMD_RESP_ID;
+  cmd->nbytes=9;
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+  #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+  float a0, a1;
+  cmd->bytes[8]=get_analog_temp_sensor_calib0(cmd->bytes[0], &a0, &a1);
+
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)((*(uint32_t*)&a0)>>16));
+  *((uint16_t*)&cmd->bytes[2])=htobe16((uint16_t)(*(uint32_t*)&a0));
+  *((uint16_t*)&cmd->bytes[4])=htobe16((uint16_t)((*(uint32_t*)&a1)>>16));
+  *((uint16_t*)&cmd->bytes[6])=htobe16((uint16_t)(*(uint32_t*)&a1));
+  #pragma GCC diagnostic pop
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
+void get_analog_temp_sensor_calib1_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_ANALOG_TEMP_SENSOR_CALIB1_CMD_RESP_ID;
   cmd->nbytes=7;
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-  int16_t a0, a1, a2;
-  cmd->bytes[6]=get_analog_temp_sensor_calib(cmd->bytes[0], &a0, &a1, &a2);
+  #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+  float a2;
+  int16_t shift;
+  cmd->bytes[6]=get_analog_temp_sensor_calib1(cmd->bytes[0], &a2, &shift);
 
-  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)a0);
-  *((uint16_t*)&cmd->bytes[2])=htobe16((uint16_t)a1);
-  *((uint16_t*)&cmd->bytes[4])=htobe16((uint16_t)a2);
+  *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)((*(uint32_t*)&a2)>>16));
+  *((uint16_t*)&cmd->bytes[2])=htobe16((uint16_t)(*(uint32_t*)&a2));
+  *((uint16_t*)&cmd->bytes[4])=htobe16((uint16_t)shift);
   #pragma GCC diagnostic pop
   calc_check_bytes(cmd);
   send_cmd(cmd);
@@ -492,9 +515,18 @@ void set_lm75a_temp_sensor_calib_cmd(struct cmd* const cmd)
   ack(cmd->id, ret, cmd);
 }
 
-void set_analog_temp_sensor_calib_cmd(struct cmd* const cmd)
+void set_analog_temp_sensor_calib0_cmd(struct cmd* const cmd)
 {
-  int8_t ret=set_analog_temp_sensor_calib(cmd->bytes[0], (int16_t)be16toh(*(uint16_t*)(cmd->bytes+1)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)), (int16_t)be16toh(*(uint16_t*)(cmd->bytes+5)));
+  uint32_t ua0=(((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+1)))<<16|be16toh(*(uint16_t*)(cmd->bytes+3)));
+  uint32_t ua1=(((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+5)))<<16|be16toh(*(uint16_t*)(cmd->bytes+7)));
+  int8_t ret=set_analog_temp_sensor_calib0(cmd->bytes[0], *(uint32_t*)&ua0, *(uint32_t*)&ua1);
+  ack(cmd->id, ret, cmd);
+}
+
+void set_analog_temp_sensor_calib1_cmd(struct cmd* const cmd)
+{
+  uint32_t ua2=(((uint32_t)be16toh(*(uint16_t*)(cmd->bytes+1)))<<16|be16toh(*(uint16_t*)(cmd->bytes+3)));
+  int8_t ret=set_analog_temp_sensor_calib1(cmd->bytes[0], *(uint32_t*)&ua2, (int16_t)be16toh(*(uint16_t*)(cmd->bytes+3)));
   ack(cmd->id, ret, cmd);
 }
 

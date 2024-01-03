@@ -1,12 +1,12 @@
+#include <math.h>
 #include "cmd.h"
 
 static inline void init_temp_sensor_data(void)
 {
   uint8_t i;
-  struct temp_sensor* sens;
 
   for(i=0; i<LM75A_MAX_SENSORS; ++i) {
-    sens=lsensors+i;
+    struct lm75a_temp_sensor* const sens=lsensors+i;
     sens->a2=0;
     sens->a1=(1<<14);
     sens->a0=0;
@@ -15,7 +15,7 @@ static inline void init_temp_sensor_data(void)
   }
 
   for(i=0; i<MAX_ANALOG_SENSORS; ++i) {
-    sens=asensors+i;
+    struct analog_temp_sensor* const sens=asensors+i;
     sens->a2=0;
     sens->a1=(1<<14);
     sens->a0=0;
@@ -40,24 +40,6 @@ static inline uint8_t get_temp_sensor_list(uint8_t const* const senslist, uint8_
   return ret;
 }
 
-static inline int8_t add_temp_sensor(const uint8_t id, const uint8_t nmaxids, struct temp_sensor* const allsensors, uint8_t* const senslist, uint8_t* const nsens)
-{
-  if(id>=nmaxids) return -1;
-  uint8_t i;
-
-  for(i=0; i<*nsens; ++i) if(senslist[i]==id) return 0;
-
-  senslist[*nsens]=id;
-  struct temp_sensor* sens=allsensors+id;
-  sens->a2=0;
-  sens->a1=(1<<14);
-  sens->a0=0;
-  sens->alarm_value=TEMP_SENSOR_DEFAULT_ALARM_VALUE;
-  sens->value=TEMP_SENSOR_INVALID_VALUE;
-  ++*nsens;
-  return 0;
-}
-
 static inline int8_t del_temp_sensor(const uint8_t id, const uint8_t nmaxids, uint8_t* const senslist, uint8_t* const nsens)
 {
   if(id>=nmaxids) return -1;
@@ -79,7 +61,20 @@ static inline uint8_t get_lm75a_temp_sensor_list(void)
 
 static inline int8_t add_lm75a_temp_sensor(const uint8_t id)
 {
-  return add_temp_sensor(id, LM75A_MAX_SENSORS, lsensors, lsenslist, &nlsensors);
+  if(id>=LM75A_MAX_SENSORS) return -1;
+  uint8_t i;
+
+  for(i=0; i<nlsensors; ++i) if(lsenslist[i]==id) return 0;
+
+  lsenslist[nlsensors]=id;
+  struct lm75a_temp_sensor* sens=lsensors+id;
+  sens->a2=0;
+  sens->a1=(1<<14);
+  sens->a0=0;
+  sens->alarm_value=TEMP_SENSOR_DEFAULT_ALARM_VALUE;
+  sens->value=TEMP_SENSOR_INVALID_VALUE;
+  ++nlsensors;
+  return 0;
 }
 
 static inline int8_t del_lm75a_temp_sensor(const uint8_t id)
@@ -94,7 +89,20 @@ static inline uint8_t get_analog_temp_sensor_list(void)
 
 static inline int8_t add_analog_temp_sensor(const uint8_t id)
 {
-  return add_temp_sensor(id, MAX_ANALOG_SENSORS, asensors, asenslist, &nasensors);
+  if(id>=MAX_ANALOG_SENSORS) return -1;
+  uint8_t i;
+
+  for(i=0; i<nasensors; ++i) if(asenslist[i]==id) return 0;
+
+  asenslist[nasensors]=id;
+  struct analog_temp_sensor* sens=asensors+id;
+  sens->a2=0;
+  sens->a1=(1<<14);
+  sens->a0=0;
+  sens->alarm_value=TEMP_SENSOR_DEFAULT_ALARM_VALUE;
+  sens->value=TEMP_SENSOR_INVALID_VALUE;
+  ++nasensors;
+  return 0;
 }
 
 static inline int8_t del_analog_temp_sensor(const uint8_t id)
@@ -120,42 +128,54 @@ static inline int16_t get_soft_temp_sensor_value(const uint8_t id)
   return ssensors_values[id];
 }
 
-static inline int8_t get_temp_sensor_calib(const uint8_t id, const uint8_t nmaxids, struct temp_sensor* const allsensors, int16_t* a0, int16_t* a1, int16_t* a2)
+static inline int8_t get_lm75a_temp_sensor_calib(const uint8_t id, int16_t* a0, int16_t* a1, int16_t* a2)
 {
-  if(id>=nmaxids) return -1;
-  *a0=allsensors[id].a0;
-  *a1=allsensors[id].a1;
-  *a2=allsensors[id].a2;
+  if(id>=LM75A_MAX_SENSORS) return -1;
+  *a0=lsensors[id].a0;
+  *a1=lsensors[id].a1;
+  *a2=lsensors[id].a2;
   return 0;
 }
 
-static inline int8_t get_lm75a_temp_sensor_calib(const uint8_t id, int16_t* a0, int16_t* a1, int16_t* a2)
+static inline int8_t get_analog_temp_sensor_calib0(const uint8_t id, float* a0, float* a1)
 {
-  return get_temp_sensor_calib(id, LM75A_MAX_SENSORS, lsensors, a2, a1, a0);
+  if(id>=MAX_ANALOG_SENSORS) return -1;
+  *a0=asensors[id].a0;
+  *a1=asensors[id].a1;
+  return 0;
 }
 
-static inline int8_t get_analog_temp_sensor_calib(const uint8_t id, int16_t* a0, int16_t* a1, int16_t* a2)
+static inline int8_t get_analog_temp_sensor_calib1(const uint8_t id, float* a2, int16_t* shift)
 {
-  return get_temp_sensor_calib(id, MAX_ANALOG_SENSORS, asensors, a2, a1, a0);
-}
-
-static inline int8_t set_temp_sensor_calib(const uint8_t id, const uint8_t nmaxids, struct temp_sensor* const allsensors, const int16_t a0, const int16_t a1, const int16_t a2)
-{
-  if(id>=nmaxids) return -1;
-  allsensors[id].a0=a0;
-  allsensors[id].a1=a1;
-  allsensors[id].a2=a2;
+  if(id>=MAX_ANALOG_SENSORS) return -1;
+  *a2=asensors[id].a2;
+  *shift=asensors[id].shift;
   return 0;
 }
 
 static inline int8_t set_lm75a_temp_sensor_calib(const uint8_t id, const int16_t a0, const int16_t a1, const int16_t a2)
 {
-  return set_temp_sensor_calib(id, LM75A_MAX_SENSORS, lsensors, a2, a1, a0);
+  if(id>=LM75A_MAX_SENSORS) return -1;
+  lsensors[id].a0=a0;
+  lsensors[id].a1=a1;
+  lsensors[id].a2=a2;
+  return 0;
 }
 
-static inline int8_t set_analog_temp_sensor_calib(const uint8_t id, const int16_t a0, const int16_t a1, const int16_t a2)
+static inline int8_t set_analog_temp_sensor_calib0(const uint8_t id, const float a0, const float a1)
 {
-  return set_temp_sensor_calib(id, MAX_ANALOG_SENSORS, asensors, a2, a1, a0);
+  if(id>=MAX_ANALOG_SENSORS) return -1;
+  asensors[id].a0=a0;
+  asensors[id].a1=a1;
+  return 0;
+}
+
+static inline int8_t set_analog_temp_sensor_calib1(const uint8_t id, const float a2, const int16_t shift)
+{
+  if(id>=MAX_ANALOG_SENSORS) return -1;
+  asensors[id].a2=a2;
+  asensors[id].shift=shift;
+  return 0;
 }
 
 static inline int8_t set_soft_temp_sensor_value(const uint8_t id, const int16_t value)
@@ -207,13 +227,12 @@ static inline int8_t set_soft_temp_sensor_alarm_value(const uint8_t id, const in
 static inline void update_temp_values(void)
 {
   uint8_t i;
-  int16_t value;
   bool alarm=false;
 
   for(i=0; i<nlsensors; ++i) {
     const uint8_t id=lsenslist[i];
-    value=lm75a_get_value(id);
-    struct temp_sensor* const sens=lsensors+id;
+    int16_t value=lm75a_get_value(id);
+    struct lm75a_temp_sensor* const sens=lsensors+id;
     sens->value=sens->a0 + ((((int32_t)value)*(sens->a1 + ((((int32_t)value) * sens->a2)>>14)))>>14);
 
     if(sens->value >= sens->alarm_value) {
@@ -224,9 +243,9 @@ static inline void update_temp_values(void)
 
   for(i=0; i<nasensors; ++i) {
     const uint8_t id=asenslist[i];
-    value=analog_sensor_get_ADC_value(id);
-    struct temp_sensor* const sens=asensors+id;
-    sens->value=sens->a0 + ((((int32_t)value)*(sens->a1 + ((((int32_t)value) * sens->a2)>>14)))>>14);
+    float x=logf(analog_sensor_get_ADC_value(id));
+    struct analog_temp_sensor* const sens=asensors+id;
+    sens->value=(int16_t)(1/(sens->a0 + x * (sens->a1 + x*sens->a2))-69926.4) + sens->shift;
 
     if(sens->value >= sens->alarm_value) {
       analog_temp_sensor_alarm_cmd(i);
