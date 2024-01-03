@@ -9,7 +9,7 @@
 extern volatile int16_t adc_values[ADC_NCHANNELS];
 extern uint8_t cur_adc_channel;
 
-static inline int16_t adc_get_value(const uint8_t index)
+static inline uint16_t adc_get_value(const uint8_t index)
 {
   return adc_values[index];
 }

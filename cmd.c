@@ -16,6 +16,7 @@ void get_lm75a_temp_sensor_list_cmd(struct cmd* const cmd);
 void add_analog_temp_sensor_cmd(struct cmd* const cmd);
 void del_analog_temp_sensor_cmd(struct cmd* const cmd);
 void get_analog_temp_sensor_list_cmd(struct cmd* const cmd);
+void get_analog_temp_sensor_adc_value_cmd(struct cmd* const cmd);
 void get_lm75a_temp_sensor_value_cmd(struct cmd* const cmd);
 void get_analog_temp_sensor_value_cmd(struct cmd* const cmd);
 void get_soft_temp_sensor_value_cmd(struct cmd* const cmd);
@@ -287,13 +288,13 @@ const __flash struct input_cmd input_cmds[] = {
     {0,0}, //194
     {0,0}, //195
     {0,0}, //196
-    {0,0}, //197
-    {add_lm75a_temp_sensor_cmd,1}, //198
-    {del_lm75a_temp_sensor_cmd,1}, //199
-    {get_lm75a_temp_sensor_list_cmd,0}, //200
-    {add_analog_temp_sensor_cmd,1}, //201
-    {del_analog_temp_sensor_cmd,1}, //202
-    {get_analog_temp_sensor_list_cmd,0}, //203
+    {add_lm75a_temp_sensor_cmd,1}, //197
+    {del_lm75a_temp_sensor_cmd,1}, //198
+    {get_lm75a_temp_sensor_list_cmd,0}, //199
+    {add_analog_temp_sensor_cmd,1}, //200
+    {del_analog_temp_sensor_cmd,1}, //201
+    {get_analog_temp_sensor_list_cmd,0}, //202
+    {get_analog_temp_sensor_adc_value_cmd,1}, //203
     {get_lm75a_temp_sensor_value_cmd,1}, //204
     {get_analog_temp_sensor_value_cmd,1}, //205
     {get_soft_temp_sensor_value_cmd,1}, //206
@@ -423,6 +424,15 @@ void get_analog_temp_sensor_list_cmd(struct cmd* const cmd)
   cmd->id=GET_ANALOG_TEMP_SENSOR_LIST_CMD_RESP_ID;
   cmd->nbytes=1;
   cmd->bytes[0]=get_analog_temp_sensor_list();
+  calc_check_bytes(cmd);
+  send_cmd(cmd);
+}
+
+void get_analog_temp_sensor_adc_value_cmd(struct cmd* const cmd)
+{
+  cmd->id=GET_ANALOG_TEMP_SENSOR_ADC_VALUE_CMD_RESP_ID;
+  cmd->nbytes=2;
+  *((uint16_t*)&cmd->bytes[0])=htobe16(analog_sensor_get_ADC_value(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);
 }
