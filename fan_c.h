@@ -348,7 +348,7 @@ static inline int8_t set_fan_mode_transitions(const uint8_t id, const uint8_t pw
 static inline uint16_t get_fan_adc_value(const uint8_t id)
 {
   if(id>=N_MAX_FANS) return 0;
-  return adc_getValue(id);
+  return adc_get_value(id);
 }
 
 static inline uint8_t get_fan_output(const uint8_t id)

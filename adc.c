@@ -18,5 +18,5 @@ ISR(ADC_INTR_FUNC)
     else set_fan_pin(DC, cur_adc_channel, false);
   }
   cur_adc_channel=ADC_MUX_SELECT_REG&(ADC_NCHANNELS-1);
-  ADC_MUX_SELECT_REG = _BV(ADC_REFERENCE_SELECT_BIT_0) | ((cur_adc_channel+1)%ADC_NCHANNELS);
+  ADC_MUX_SELECT_REG = _BV(ADC_REFERENCE_SELECT_BIT_0) | _BV(ADC_REFERENCE_SELECT_BIT_1) | ((cur_adc_channel+1)%ADC_NCHANNELS);
 }

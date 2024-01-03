@@ -758,7 +758,7 @@ void switch_fan_mode_cmd(struct cmd* const cmd)
 void get_fan_adc_value_cmd(struct cmd* const cmd)
 {
   cmd->id=GET_FAN_ADC_VALUE_CMD_RESP_ID;
-  cmd->nbytes=1;
+  cmd->nbytes=2;
   *((uint16_t*)&cmd->bytes[0])=htobe16((uint16_t)get_fan_adc_value(cmd->bytes[0]));
   calc_check_bytes(cmd);
   send_cmd(cmd);

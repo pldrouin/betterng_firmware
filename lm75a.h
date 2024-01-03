@@ -39,7 +39,7 @@ static inline bool lm75a_read16bitRegister(const uint8_t address, uint16_t* resp
   return true;
 }
 
-static inline int16_t lm75a_getValue(const uint8_t id)
+static inline int16_t lm75a_get_value(const uint8_t id)
 {
   //Returned value is the temperature in Celsius * 256
   uint16_t value;
