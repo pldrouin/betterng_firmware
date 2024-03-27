@@ -1,4 +1,4 @@
-This is an open source firmware for a BigNG dual-mode (voltage + PWM) fan controller.
+This is an open source firmware for the BigNG dual-mode (voltage + PWM) fan controller.
 It allows full control of the 4 fan channels using digital, analog and software temperature readings.
 It supports the calibration of the fans for both the voltage and PWM control modes and also to seamlessly switch
 control mode as a function of the desired fan output. Calibration of the digital and analog temperature proves is
